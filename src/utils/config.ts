@@ -1,5 +1,5 @@
 // API基础URL配置
-export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8001'
+export const API_BASE_URL = (import.meta as any).env?.VITE_API_IMAGE_URL || 'http://127.0.0.1:8001'
 
 // 获取完整的图片URL
 export const getImageUrl = (imagePath: string | null | undefined): string | null => {
@@ -8,6 +8,11 @@ export const getImageUrl = (imagePath: string | null | undefined): string | null
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
         return imagePath
     }
-    // 拼接基础URL
-    return `${API_BASE_URL}/uploads/${imagePath}`
+    // 移除开头的斜杠（如果有）
+    const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath
+    // 拼接基础URL - 注意uploads路径不需要重复
+    if (cleanPath.startsWith('uploads/')) {
+        return `${API_BASE_URL}/${cleanPath}`
+    }
+    return `${API_BASE_URL}/uploads/${cleanPath}`
 }

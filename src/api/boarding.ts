@@ -23,7 +23,7 @@ export const getBoardingList = (params?: {
   status_filter?: BoardingStatus
 }) => {
   return request<Boarding[]>({
-    url: '/boarding/',
+    url: '/boarding',
     method: 'get',
     params,
   })
@@ -32,11 +32,11 @@ export const getBoardingList = (params?: {
 // 获取进行中的寄养
 export const getOngoingBoarding = (params?: { skip?: number; limit?: number }) => {
   return request<Boarding[]>({
-    url: '/boarding/',
+    url: '/boarding',
     method: 'get',
     params: {
       ...params,
-      status_filter: 'ongoing' as BoardingStatus,
+      status_filter: 'active' as BoardingStatus,
     },
   })
 }

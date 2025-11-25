@@ -65,6 +65,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '交易记录', icon: 'Wallet' },
       },
       {
+        path: 'members',
+        name: 'Members',
+        component: () => import('@/views/member/index.vue'),
+        meta: { title: '会员管理', icon: 'User' },
+      },
+      {
+        path: 'member-levels',
+        name: 'MemberLevels',
+        component: () => import('@/views/member/levels.vue'),
+        meta: { title: '会员等级', icon: 'Star' },
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/profile/index.vue'),

@@ -206,8 +206,15 @@
     <el-dialog
       v-model="healthDialogVisible"
       :title="`${currentPetName} 的健康记录`"
-      width="800px"
+      width="900px"
     >
+      <div style="margin-bottom: 16px">
+        <el-button type="primary" @click="handleAddHealthRecord">
+          <el-icon><Plus /></el-icon>
+          添加健康记录
+        </el-button>
+      </div>
+
       <el-table
         v-loading="healthLoading"
         :data="healthRecords"
@@ -217,17 +224,66 @@
       >
         <el-table-column type="index" label="#" width="60" align="center" />
         <el-table-column prop="record_date" label="记录日期" width="120" />
-        <el-table-column prop="description" label="描述" min-width="200" />
+        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
         <el-table-column prop="veterinarian" label="兽医" width="100" />
+        <el-table-column label="操作" width="150" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" link @click="handleEditHealthRecord(row)">
+              编辑
+            </el-button>
+            <el-button type="danger" size="small" link @click="handleDeleteHealthRecord(row)">
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
       <div v-if="healthRecords.length === 0 && !healthLoading" style="text-align: center; padding: 40px; color: #999;">
         暂无健康记录
       </div>
-     <template #footer>
+      <template #footer>
         <el-button @click="healthDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <!-- 健康记录编辑对话框 -->
+    <el-dialog
+      v-model="healthFormVisible"
+      :title="healthFormTitle"
+      width="500px"
+      @close="resetHealthForm"
+    >
+      <el-form ref="healthFormRef" :model="healthFormData" :rules="healthRules" label-width="100px">
+        <el-form-item label="记录日期" prop="record_date">
+          <el-date-picker
+            v-model="healthFormData.record_date"
+            type="date"
+            placeholder="请选择日期"
+            style="width: 100%"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+          />
+        </el-form-item>
+        <el-form-item label="健康描述" prop="description">
+          <el-input
+            v-model="healthFormData.description"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入健康检查或治疗描述"
+          />
+        </el-form-item>
+        <el-form-item label="兽医姓名">
+          <el-input v-model="healthFormData.veterinarian" placeholder="请输入兽医姓名" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="healthFormVisible = false">取消</el-button>
+        <el-button type="primary" :loading="healthSubmitting" @click="handleSubmitHealthRecord">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
+
 </template>
 
 <script setup lang="ts">
@@ -236,6 +292,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules, UploadRequestOptions } from 'element-plus'
 import { getPetList, createPet, updatePet, deletePet, uploadPetImage, deletePetImage, getHealthRecords } from '@/api/pet'
 import type { Pet, PetCreate, PetUpdate, HealthRecord } from '@/types/pet'
+import { createHealthRecord, updateHealthRecord, deleteHealthRecord, getPetHealthRecords } from '@/api/health'
+import type { HealthRecordCreate, HealthRecordUpdate } from '@/types/health'
 import { Plus } from '@element-plus/icons-vue'
 import { getImageUrl } from '@/utils/config' 
 
@@ -343,11 +401,12 @@ const currentPetName = ref('')
 
 const handleViewHealth = async (row: Pet) => {
   currentPetName.value = row.name
+  currentPetId.value = row.id
   healthDialogVisible.value = true
   healthLoading.value = true
   
   try {
-    const records = await getHealthRecords(row.id)
+    const records = await getPetHealthRecords(row.id)
     healthRecords.value = records
   } catch (error) {
     ElMessage.error('加载健康记录失败')
@@ -355,6 +414,104 @@ const handleViewHealth = async (row: Pet) => {
   } finally {
     healthLoading.value = false
   }
+}
+
+// 健康记录表单相关
+const healthFormVisible = ref(false)
+const healthFormTitle = ref('添加健康记录')
+const healthFormRef = ref<FormInstance>()
+const healthSubmitting = ref(false)
+const isEditHealthRecord = ref(false)
+const currentHealthRecordId = ref(0)
+const currentPetId = ref(0)
+
+const healthFormData = reactive<HealthRecordCreate | HealthRecordUpdate>({
+  pet_id: 0,
+  record_date: '',
+  description: '',
+  veterinarian: '',
+})
+
+const healthRules: FormRules = {
+  record_date: [{ required: true, message: '请选择记录日期', trigger: 'change' }],
+  description: [{ required: true, message: '请输入健康描述', trigger: 'blur' }],
+}
+
+const handleAddHealthRecord = () => {
+  isEditHealthRecord.value = false
+  healthFormTitle.value = '添加健康记录'
+  resetHealthForm()
+  healthFormData.pet_id = currentPetId.value
+  healthFormVisible.value = true
+}
+
+const handleEditHealthRecord = (row: any) => {
+  isEditHealthRecord.value = true
+  currentHealthRecordId.value = row.id
+  healthFormTitle.value = '编辑健康记录'
+  Object.assign(healthFormData, {
+    record_date: row.record_date,
+    description: row.description,
+    veterinarian: row.veterinarian,
+  })
+  healthFormVisible.value = true
+}
+
+const handleDeleteHealthRecord = async (row: any) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这条健康记录吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+
+    await deleteHealthRecord(row.id)
+    ElMessage.success('删除成功')
+    // 重新加载健康记录
+    const records = await getPetHealthRecords(currentPetId.value)
+    healthRecords.value = records
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+const handleSubmitHealthRecord = async () => {
+  if (!healthFormRef.value) return
+
+  await healthFormRef.value.validate(async (valid) => {
+    if (valid) {
+      healthSubmitting.value = true
+      try {
+        if (isEditHealthRecord.value) {
+          await updateHealthRecord(currentHealthRecordId.value, healthFormData as HealthRecordUpdate)
+          ElMessage.success('更新成功')
+        } else {
+          await createHealthRecord(healthFormData as HealthRecordCreate)
+          ElMessage.success('创建成功')
+        }
+        healthFormVisible.value = false
+        // 重新加载健康记录
+        const records = await getPetHealthRecords(currentPetId.value)
+        healthRecords.value = records
+      } catch (error) {
+        ElMessage.error('操作失败')
+      } finally {
+        healthSubmitting.value = false
+      }
+    }
+  })
+}
+
+const resetHealthForm = () => {
+  healthFormRef.value?.resetFields()
+  Object.assign(healthFormData, {
+    pet_id: currentPetId.value,
+    record_date: '',
+    description: '',
+    veterinarian: '',
+  })
 }
 
 const handleDelete = async (row: Pet) => {
