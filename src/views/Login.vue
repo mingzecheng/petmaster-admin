@@ -38,6 +38,17 @@
           />
         </el-form-item>
 
+        <!-- reCAPTCHA v2 弹窗 -->
+        <div v-show="showRecaptchaModal" class="recaptcha-modal" @click.self="showRecaptchaModal = false">
+          <div class="recaptcha-content">
+            <div class="recaptcha-header">
+              <span>请完成安全验证</span>
+              <el-icon class="close-icon" @click="showRecaptchaModal = false"><Close /></el-icon>
+            </div>
+            <div id="recaptcha-container" class="recaptcha-wrapper"></div>
+          </div>
+        </div>
+
         <el-form-item>
           <el-button
             type="primary"
@@ -67,21 +78,22 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useRecaptcha } from '@/composables/useRecaptcha'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { LoginForm } from '@/types/user'
-import { Orange } from '@element-plus/icons-vue'
+import { Orange, Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const userStore = useUserStore()
-const { executeRecaptcha } = useRecaptcha()
+const { version: recaptchaVersion, renderV2, executeRecaptcha } = useRecaptcha()
 
 const formRef = ref<FormInstance>()
 const loading = ref(false)
+const showRecaptchaModal = ref(false)
 
 const loginForm = reactive<LoginForm>({
   username: '',
@@ -96,20 +108,50 @@ const rules: FormRules = {
   ],
 }
 
+// v2: 组件挂载时渲染验证框
+onMounted(async () => {
+  if (recaptchaVersion === 'v2') {
+    try {
+      // 传入回调：验证成功后自动关闭弹窗并尝试登录
+      await renderV2('recaptcha-container', (token) => {
+        showRecaptchaModal.value = false
+        handleLogin()
+      })
+    } catch (error) {
+      console.error('Failed to render reCAPTCHA v2:', error)
+      ElMessage.warning('验证码加载失败，请刷新页面重试')
+    }
+  }
+})
+
 const handleLogin = async () => {
   if (!formRef.value) return
 
   await formRef.value.validate(async (valid) => {
     if (valid) {
+      // v2 特殊处理：如果未验证，显示弹窗
+      if (recaptchaVersion === 'v2') {
+        try {
+          // 尝试获取 token，如果失败（未验证）则抛出错误
+          await executeRecaptcha('login')
+        } catch (error) {
+          // 未验证，显示弹窗
+          showRecaptchaModal.value = true
+          return
+        }
+      }
+
       loading.value = true
       try {
-        // 获取 reCAPTCHA token
+        // 获取 reCAPTCHA token (v2 或 v3)
         let recaptchaToken: string | undefined
         try {
           recaptchaToken = await executeRecaptcha('login')
-        } catch (error) {
+        } catch (error: any) {
           console.error('reCAPTCHA error:', error)
-          ElMessage.warning('验证码加载失败，将尝试继续登录')
+          ElMessage.error(error.message || '验证码验证失败')
+          loading.value = false
+          return
         }
 
         // 登录请求
@@ -164,6 +206,167 @@ const handleLogin = async () => {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+.login-box {
+  position: relative;
+  /* ... existing styles ... */
+}
+
+/* reCAPTCHA 弹窗样式 - 优化版 */
+.recaptcha-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 214, 0, 0.15) 0%,
+    rgba(41, 121, 255, 0.15) 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: overlayFadeIn 0.3s ease;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.recaptcha-content {
+  position: relative;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.98) 100%
+  );
+  padding: 32px 28px 28px;
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+    0 8px 16px rgba(41, 121, 255, 0.1);
+  animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 2px solid rgba(255, 214, 0, 0.2);
+  overflow: hidden;
+}
+
+/* 添加装饰性渐变边框效果 */
+.recaptcha-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    #FFD600 0%,
+    #2979FF 50%,
+    #FFD600 100%
+  );
+  background-size: 200% 100%;
+  animation: gradientMove 3s linear infinite;
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.recaptcha-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(255, 214, 0, 0.15);
+}
+
+.recaptcha-header span {
+  font-size: 18px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #FFD600 0%, #2979FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 添加安全图标 */
+.recaptcha-header span::before {
+  content: '🔒';
+  font-size: 20px;
+  filter: grayscale(0);
+  -webkit-text-fill-color: initial;
+}
+
+.close-icon {
+  cursor: pointer;
+  font-size: 22px;
+  color: #999;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 6px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.close-icon:hover {
+  color: #FF5252;
+  background: rgba(255, 82, 82, 0.1);
+  transform: rotate(90deg);
+}
+
+.recaptcha-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) inset;
+}
+
+/* 移动端适配 */
+@media (max-width: 480px) {
+  .recaptcha-content {
+    margin: 0 16px;
+    padding: 24px 20px 20px;
+    border-radius: 16px;
+  }
+  
+  .recaptcha-header span {
+    font-size: 16px;
+  }
+}
+
 
 .login-box {
   position: relative;
