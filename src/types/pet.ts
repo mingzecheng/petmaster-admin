@@ -3,13 +3,12 @@ export interface Pet {
   name: string
   species: string
   breed?: string
-  age?: number
   gender?: 'male' | 'female'
-  color?: string
+  birthday?: string
   weight?: number
   owner_id: number
   health_status?: string
-  notes?: string
+  image_url?: string
   created_at: string
   updated_at: string
 }
@@ -18,45 +17,37 @@ export interface PetCreate {
   name: string
   species: string
   breed?: string
-  age?: number
   gender?: 'male' | 'female'
-  color?: string
+  birthday?: string
   weight?: number
   owner_id: number
   health_status?: string
-  notes?: string
+  image_url?: string
 }
 
 export interface PetUpdate {
   name?: string
   species?: string
   breed?: string
-  age?: number
   gender?: 'male' | 'female'
-  color?: string
+  birthday?: string
   weight?: number
   health_status?: string
-  notes?: string
+  image_url?: string
 }
 
 export interface HealthRecord {
   id: number
   pet_id: number
-  record_type: string
-  description: string
   record_date: string
-  vet_name?: string
-  cost?: number
-  next_visit_date?: string
+  description?: string
+  veterinarian?: string
   created_at: string
 }
 
 export interface HealthRecordCreate {
-  pet_id: number
-  record_type: string
-  description: string
+  pet_id?: number
   record_date: string
-  vet_name?: string
-  cost?: number
-  next_visit_date?: string
+  description?: string
+  veterinarian?: string
 }

@@ -13,7 +13,7 @@
           :data="tableData"
           stripe
           border
-          style="width: 100%"
+          class="theme-table"
         >
           <el-table-column type="index" label="#" width="60" align="center" />
           <el-table-column prop="id" label="ID" width="80" align="center" />
@@ -68,7 +68,6 @@
       </div>
     </el-card>
 
-    <!-- 编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
       :title="dialogTitle"
@@ -140,6 +139,7 @@ const rules: FormRules = {
   role: [{ required: true, message: '请选择角色', trigger: 'change' }],
 }
 
+// ------------------- 后端交互逻辑保持不变 -------------------
 const loadData = async () => {
   loading.value = true
   try {
@@ -152,28 +152,6 @@ const loadData = async () => {
   } finally {
     loading.value = false
   }
-}
-
-const formatDate = (date: string) => {
-  return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
-}
-
-const getRoleType = (role: string) => {
-  const types: Record<string, any> = {
-    admin: 'danger',
-    staff: 'warning',
-    member: '',
-  }
-  return types[role] || ''
-}
-
-const getRoleText = (role: string) => {
-  const texts: Record<string, string> = {
-    admin: '管理员',
-    staff: '员工',
-    member: '会员',
-  }
-  return texts[role] || role
 }
 
 const handleEdit = (row: User) => {
@@ -222,6 +200,30 @@ const handleSubmit = async () => {
     }
   })
 }
+// ------------------- 后端交互逻辑保持不变 -------------------
+
+// 辅助函数（保持不变）
+const formatDate = (date: string) => {
+  return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
+}
+
+const getRoleType = (role: string) => {
+  const types: Record<string, any> = {
+    admin: 'danger',
+    staff: 'warning',
+    member: '',
+  }
+  return types[role] || ''
+}
+
+const getRoleText = (role: string) => {
+  const texts: Record<string, string> = {
+    admin: '管理员',
+    staff: '员工',
+    member: '会员',
+  }
+  return texts[role] || role
+}
 
 const resetForm = () => {
   formRef.value?.resetFields()
@@ -241,20 +243,78 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 8px 0; /* 增加内边距以匹配其他组件 */
 }
 
 .title {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 20px; /* 增大字号 */
+  font-weight: 600; /* 加粗 */
+  color: var(--pet-text);
+  display: flex;
+  align-items: center;
+}
+
+/* 标题左侧的装饰色带 */
+.title::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 24px;
+    background: var(--pet-primary);
+    border-radius: 4px;
+    margin-right: 12px;
+    box-shadow: 0 2px 8px rgba(255, 214, 0, 0.4);
 }
 
 .table-container {
-  margin-top: 16px;
+  margin-top: 0px; /* 移除容器的边距，让表格样式来控制 */
+}
+
+/* Table specific overrides - 应用主题样式 */
+.theme-table {
+    width: 100%; /* 确保宽度继承 */
+    border-radius: 12px;
+    overflow: hidden; 
+    border: 1px solid var(--pet-border);
+}
+
+/* Customizing stripe row */
+.theme-table :deep(.el-table__row.el-table__row--striped) {
+    background-color: var(--pet-bg-base) !important; 
+}
+
+/* Customizing header */
+.theme-table :deep(.el-table__header-wrapper) th {
+    background-color: #FAFAFA;
+    color: var(--pet-text-secondary);
+    font-weight: 700;
+    height: 50px;
+}
+
+/* Link buttons in table */
+.theme-table .el-button--link.el-button--primary {
+    color: var(--pet-secondary);
+}
+.theme-table .el-button--link.el-button--primary:hover {
+    color: var(--pet-secondary-dark);
 }
 
 .pagination {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+  padding: 10px 0;
+}
+
+/* Pagination active color */
+.pagination :deep(.el-pager li.is-active) {
+    background-color: var(--pet-primary) !important;
+    color: var(--pet-text-on-primary) !important;
+    font-weight: 700;
+    border: none;
+}
+
+.pagination :deep(.el-pager li:hover) {
+    color: var(--pet-primary-dark);
 }
 </style>

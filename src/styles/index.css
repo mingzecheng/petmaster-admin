@@ -1,70 +1,356 @@
+/* 宠物主题全局样式 - Vibrant Yellow Edition */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* --- 核心色板 (Vibrant Palette) --- */
+  /* 主色：活力黄 (Vibrant Yellow) */
+  --pet-primary: #FFD600;
+  --pet-primary-light: #FFE57F;
+  --pet-primary-dark: #FFAB00;
+  --pet-primary-fade: rgba(255, 214, 0, 0.15);
+
+  /* 按钮文字颜色 (由于主色很亮，使用深色文字) */
+  --pet-text-on-primary: #212121;
+
+  /* 辅色：活力蓝 (Electric Blue) */
+  --pet-secondary: #2979FF;
+  --pet-secondary-dark: #2962FF;
+  --pet-secondary-fade: rgba(41, 121, 255, 0.1);
+
+  /* 功能色 */
+  --pet-success: #00C853;
+  --pet-warning: #FF6D00;
+  --pet-danger: #FF1744;
+  --pet-info: #00B0FF;
+
+  /* 背景体系 */
+  --pet-bg-base: #FFFDE7;
+  /* 基础背景，暖浅黄 */
+  --pet-bg-sidebar: #FFF59D;
+  /* 侧边栏背景，稍深一点的黄 */
+  --pet-bg-card: #FFFFFF;
+  /* 卡片背景，保持白色以突出内容 */
+  --pet-bg-glass: rgba(255, 255, 255, 0.6);
+  /* 玻璃拟态背景 */
+
+  /* 文本体系 */
+  --pet-text-main: #212121;
+  /* 主要文字 - 接近纯黑 */
+  --pet-text-regular: #424242;
+  /* 常规文字 */
+  --pet-text-secondary: #757575;
+  /* 次要文字 */
+  --pet-text-placeholder: #BDBDBD;
+
+  /* 边框与分割 */
+  --pet-border: #E0E0E0;
+  --pet-border-light: #F5F5F5;
+
+  /* 阴影体系 - 更柔和且带有主色倾向 */
+  --pet-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+  --pet-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+  --pet-shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.08), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
+  --pet-shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.12);
+  --pet-shadow-colored: 0 8px 24px -4px rgba(255, 214, 0, 0.4);
+
+  /* 倒角 */
+  --pet-radius-sm: 8px;
+  --pet-radius: 16px;
+  --pet-radius-lg: 24px;
+  --pet-radius-full: 9999px;
+}
+
+/* 全局重置与基础样式 */
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-    'Helvetica Neue', sans-serif;
+  margin: 0;
+  font-family: 'Outfit', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background-color: var(--pet-bg-base);
+  color: var(--pet-text-regular);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
 }
 
-/* 过渡动画 */
-.fade-transform-leave-active,
-.fade-transform-enter-active {
-  transition: all 0.3s;
-}
-
-.fade-transform-enter-from {
-  opacity: 0;
-  transform: translateX(-30px);
-}
-
-.fade-transform-leave-to {
-  opacity: 0;
-  transform: translateX(30px);
-}
-
-/* 卡片悬浮效果 */
-.card-hover {
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.card-hover:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-}
-
-/* 滚动条样式 */
+/* 滚动条美化 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+  background: #E0E0E0;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #BDBDBD;
 }
 
-/* nprogress 自定义样式 */
-#nprogress .bar {
-  background: #409eff !important;
-  height: 3px !important;
+/* Element Plus 组件深度定制 */
+
+/* 按钮 */
+.el-button--primary {
+  --el-button-bg-color: var(--pet-primary);
+  --el-button-border-color: var(--pet-primary);
+  --el-button-hover-bg-color: #FFEA00;
+  /* 更亮的黄色 */
+  --el-button-hover-border-color: #FFEA00;
+  --el-button-active-bg-color: var(--pet-primary-dark);
+  --el-button-active-border-color: var(--pet-primary-dark);
+  color: var(--pet-text-on-primary);
+  /* 深色文字 */
+  font-weight: 600;
+  border-radius: var(--pet-radius);
+  box-shadow: 0 4px 12px rgba(255, 214, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: none;
 }
 
-#nprogress .spinner-icon {
-  border-top-color: #409eff !important;
-  border-left-color: #409eff !important;
+.el-button--primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 16px rgba(255, 214, 0, 0.4);
+}
+
+.el-button--primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* 卡片 */
+.el-card {
+  border: none !important;
+  border-radius: var(--pet-radius-lg) !important;
+  background: var(--pet-bg-card);
+  box-shadow: var(--pet-shadow-sm) !important;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.el-card:hover {
+  box-shadow: var(--pet-shadow-lg) !important;
+  transform: translateY(-4px);
+}
+
+.el-card__header {
+  border-bottom: 1px solid var(--pet-border-light);
+  padding: 20px 24px;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--pet-text-main);
+}
+
+/* 表格 */
+.el-table {
+  --el-table-header-bg-color: #FAFAFA;
+  --el-table-row-hover-bg-color: var(--pet-primary-fade);
+  border-radius: var(--pet-radius);
+  overflow: hidden;
+}
+
+.el-table th.el-table__cell {
+  color: var(--pet-text-secondary);
+  font-weight: 600;
+  background: #FAFAFA !important;
+  border-bottom: 1px solid var(--pet-border-light) !important;
+}
+
+.el-table td.el-table__cell {
+  border-bottom: 1px solid var(--pet-border-light) !important;
+}
+
+/* 输入框 */
+.el-input__wrapper {
+  border-radius: var(--pet-radius) !important;
+  box-shadow: 0 0 0 1px var(--pet-border) inset !important;
+  transition: all 0.3s ease;
+  padding: 8px 12px !important;
+  background-color: #FAFAFA !important;
+}
+
+.el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--pet-primary) inset !important;
+  background-color: #FFFFFF !important;
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 2px var(--pet-primary-fade), 0 0 0 1px var(--pet-primary) inset !important;
+  background-color: #FFFFFF !important;
+}
+
+/* 标签 */
+.el-tag {
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+  padding: 0 12px;
+}
+
+.el-tag--primary {
+  background-color: var(--pet-primary-fade);
+  color: var(--pet-primary-dark);
+}
+
+/* 动画类 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* 玻璃拟态工具类 */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* 宠物图标动画 */
+@keyframes pet-bounce {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-4px) rotate(-5deg);
+  }
+
+  75% {
+    transform: translateY(-4px) rotate(5deg);
+  }
+}
+
+.pet-bounce {
+  animation: pet-bounce 3s infinite ease-in-out;
+}
+
+/* 悬浮上浮效果 */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--pet-shadow-lg);
+}
+
+/* 文本渐变 */
+.text-gradient {
+  background: linear-gradient(135deg, var(--pet-primary-dark), var(--pet-primary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 新增动画关键帧 */
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes pulse-soft {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 214, 0, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 214, 0, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 214, 0, 0);
+  }
+}
+
+/* 应用动画类 */
+.animate-slide-up {
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse {
+  animation: pulse-soft 2s infinite;
+}
+
+/* 全局弹窗样式优化 */
+.el-dialog {
+  border-radius: 20px !important;
+  overflow: hidden;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.18) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.el-dialog__header {
+  margin-right: 0 !important;
+  padding: 24px 28px !important;
+  border-bottom: 1px solid var(--pet-border-light);
+  background: linear-gradient(to bottom, #ffffff, #fafafa);
+}
+
+.el-dialog__title {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: var(--pet-text-main);
+  letter-spacing: -0.5px;
+}
+
+.el-dialog__body {
+  padding: 28px !important;
+  background-color: #fff;
+}
+
+.el-dialog__footer {
+  padding: 20px 28px !important;
+  border-top: 1px solid var(--pet-border-light);
+  background-color: #fafafa;
+}
+
+/* 统一弹窗底部按钮样式 */
+.el-dialog__footer .el-button {
+  border-radius: 10px;
+  padding: 10px 24px;
+  font-weight: 600;
+  height: auto;
+}
+
+/* 弹窗内的表单样式微调 */
+.el-dialog .el-form-item__label {
+  font-weight: 500;
+  color: var(--pet-text-regular);
+}
+
+/* 修复弹窗内表格圆角 */
+.el-dialog .el-table {
+  border-radius: 8px;
+  border: 1px solid var(--pet-border-light);
 }

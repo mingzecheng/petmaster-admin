@@ -1,5 +1,6 @@
 import request from '@/utils/request'
-import type { User, LoginForm, RegisterForm, UserUpdate, TokenResponse } from '@/types/user'
+import type { User, LoginForm, UserUpdate, TokenResponse } from '@/types/user'
+// RegisterForm removed - registration only available in mini-program
 
 // 登录
 export const login = (data: LoginForm) => {
@@ -10,14 +11,6 @@ export const login = (data: LoginForm) => {
   })
 }
 
-// 注册
-export const register = (data: RegisterForm) => {
-  return request<User>({
-    url: '/auth/register',
-    method: 'post',
-    data,
-  })
-}
 
 // 获取当前用户信息
 export const getCurrentUser = () => {

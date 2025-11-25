@@ -1,9 +1,9 @@
 import request from '@/utils/request'
-import type { 
-  Boarding, 
-  BoardingCreate, 
+import type {
+  Boarding,
+  BoardingCreate,
   BoardingUpdate,
-  BoardingStatus 
+  BoardingStatus
 } from '@/types/boarding'
 
 // 创建寄养记录
@@ -16,7 +16,7 @@ export const createBoarding = (data: BoardingCreate) => {
 }
 
 // 获取寄养列表
-export const getBoardingList = (params?: { 
+export const getBoardingList = (params?: {
   skip?: number
   limit?: number
   pet_id?: number
@@ -32,9 +32,12 @@ export const getBoardingList = (params?: {
 // 获取进行中的寄养
 export const getOngoingBoarding = (params?: { skip?: number; limit?: number }) => {
   return request<Boarding[]>({
-    url: '/boarding/ongoing',
+    url: '/boarding/',
     method: 'get',
-    params,
+    params: {
+      ...params,
+      status_filter: 'ongoing' as BoardingStatus,
+    },
   })
 }
 

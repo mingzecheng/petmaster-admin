@@ -11,7 +11,7 @@
         </div>
       </template>
 
-      <el-table v-loading="loading" :data="tableData" stripe border>
+      <el-table v-loading="loading" :data="tableData" stripe border class="el-table">
         <el-table-column type="index" label="#" width="60" align="center" />
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="pet_id" label="宠物ID" width="100" align="center" />
@@ -91,6 +91,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getBoardingList, createBoarding, updateBoarding, deleteBoarding } from '@/api/boarding'
 import type { Boarding, BoardingCreate } from '@/types/boarding'
 import dayjs from 'dayjs'
+import { Plus } from '@element-plus/icons-vue' // 引入 Plus 图标
 
 const loading = ref(false)
 const tableData = ref<Boarding[]>([])
@@ -122,9 +123,16 @@ const rules = {
 const loadData = async () => {
   loading.value = true
   try {
-    const data = await getBoardingList({ skip: (currentPage.value - 1) * pageSize.value, limit: pageSize.value })
+    const params = {
+      skip: (currentPage.value - 1) * pageSize.value,
+      limit: pageSize.value
+    }
+    const data = await getBoardingList(params)
     tableData.value = data
+    // 注意：这里需要后端返回总数，暂时使用数据长度作为示例
     total.value = data.length
+  } catch (error) {
+    ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
   }
@@ -155,6 +163,16 @@ const getStatusText = (status: string) => {
 const handleAdd = () => {
   isEdit.value = false
   dialogTitle.value = '添加寄养'
+  // 重置表单
+  Object.assign(formData, {
+    pet_id: 1,
+    start_date: new Date(),
+    end_date: new Date(),
+    daily_rate: 80,
+    status: 'pending',
+    notes: '',
+  })
+  formRef.value?.resetFields()
   dialogVisible.value = true
 }
 
@@ -162,7 +180,11 @@ const handleEdit = (row: Boarding) => {
   isEdit.value = true
   currentEditId.value = row.id
   dialogTitle.value = '编辑寄养'
-  Object.assign(formData, row)
+  Object.assign(formData, {
+    ...row,
+    start_date: dayjs(row.start_date).toDate(), // 转换成 Date 对象以适配 date-picker
+    end_date: dayjs(row.end_date).toDate(), 
+  })
   dialogVisible.value = true
 }
 
@@ -209,14 +231,67 @@ onMounted(() => loadData())
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 8px 0;
 }
 .title {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 20px;
+  font-weight: 600; 
+  color: var(--pet-text);
+  display: flex;
+  align-items: center;
 }
+
+/* 标题左侧的装饰色带，使用热情的粉红色 */
+.title::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 20px;
+    background: var(--pet-primary-dark); /* #FF69B4 */
+    border-radius: 3px;
+    margin-right: 12px;
+}
+
+/* Table specific overrides */
+.el-table {
+    border-radius: 12px;
+    overflow: hidden; 
+    border: 1px solid var(--pet-border);
+}
+
+/* Customizing stripe row: 使用主色调浅粉色的极淡背景 */
+.el-table :deep(.el-table__row.el-table__row--striped) {
+    /* 使用 color-mix 或直接一个极浅的颜色，这里使用一个固定的浅色以兼容 */
+    background-color: #FFF0F5 !important; 
+}
+
+/* Customizing header: 使用玉米色背景，文字为深色 */
+.el-table :deep(.el-table__header-wrapper) th {
+    background-color: var(--pet-background); /* #FFF8DC */
+    color: var(--pet-text);
+    font-weight: 600;
+}
+
+/* Links in table (Edit/Cancel/Delete): 使用深粉色 */
+.el-button--link.el-button--primary {
+    color: var(--pet-primary-dark); /* #FF69B4 */
+}
+.el-button--link.el-button--primary:hover {
+    color: var(--pet-primary); /* #FFB6C1 */
+}
+
+
 .pagination {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+  padding: 10px 0;
+}
+
+/* Pagination active color: 使用浅粉色作为激活背景 */
+.pagination :deep(.el-pager li.is-active) {
+    background-color: var(--pet-primary) !important; /* #FFB6C1 */
+    color: white !important; /* 确保高对比度 */
+    font-weight: 600;
 }
 </style>

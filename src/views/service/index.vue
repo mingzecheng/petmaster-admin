@@ -11,7 +11,13 @@
         </div>
       </template>
 
-      <el-table v-loading="loading" :data="tableData" stripe border>
+      <el-table 
+        v-loading="loading" 
+        :data="tableData" 
+        stripe 
+        border
+        class="theme-table"
+      >
         <el-table-column type="index" label="#" width="60" align="center" />
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="name" label="服务名称" min-width="150" />
@@ -32,7 +38,9 @@
         <el-pagination
           v-model:current-page="currentPage"
           :total="total"
-          layout="total, prev, pager, next"
+          :page-size="pageSize"
+          layout="total, sizes, prev, pager, next"
+          @size-change="loadData"
           @current-change="loadData"
         />
       </div>
@@ -70,7 +78,7 @@ import type { Service, ServiceCreate } from '@/types/service'
 const loading = ref(false)
 const tableData = ref<Service[]>([])
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(10) // 默认添加 pageSize
 const total = ref(0)
 const dialogVisible = ref(false)
 const dialogTitle = ref('添加服务')
@@ -93,9 +101,16 @@ const rules = {
 const loadData = async () => {
   loading.value = true
   try {
-    const data = await getServiceList({ skip: (currentPage.value - 1) * pageSize.value, limit: pageSize.value })
+    const params = {
+      skip: (currentPage.value - 1) * pageSize.value,
+      limit: pageSize.value
+    }
+    const data = await getServiceList(params)
     tableData.value = data
+    // 注意：这里需要后端返回总数，暂时使用数据长度作为示例
     total.value = data.length
+  } catch (error) {
+    ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
   }
@@ -104,6 +119,9 @@ const loadData = async () => {
 const handleAdd = () => {
   isEdit.value = false
   dialogTitle.value = '添加服务'
+  // 重置表单
+  formRef.value?.resetFields()
+  Object.assign(formData, { name: '', price: 0, duration: 0, description: '' })
   dialogVisible.value = true
 }
 
@@ -153,14 +171,67 @@ onMounted(() => loadData())
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 8px 0; /* 增加内边距以匹配其他组件 */
 }
+
 .title {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 20px; /* 增大字号 */
+  font-weight: 600; /* 加粗 */
+  color: var(--pet-text);
+  display: flex;
+  align-items: center;
 }
+
+/* 标题左侧的装饰色带，使用热情的粉红色 */
+.title::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 20px;
+    background: var(--pet-primary-dark); /* #FF69B4 */
+    border-radius: 3px;
+    margin-right: 12px;
+}
+
+/* Table specific overrides - 使用 theme-table 替代默认 .el-table */
+.theme-table {
+    border-radius: 12px;
+    overflow: hidden; 
+    border: 1px solid var(--pet-border);
+    margin-bottom: 0 !important; /* 确保表格底部不会有额外的间距 */
+}
+
+/* Customizing stripe row: 使用主色调浅粉色的极淡背景 */
+.theme-table :deep(.el-table__row.el-table__row--striped) {
+    background-color: #FFF0F5 !important; 
+}
+
+/* Customizing header: 使用玉米色背景，文字为深色 */
+.theme-table :deep(.el-table__header-wrapper) th {
+    background-color: var(--pet-background); /* #FFF8DC */
+    color: var(--pet-text);
+    font-weight: 600;
+}
+
+/* Link buttons in table: 使用深粉色作为主链接色 */
+.theme-table .el-button--link.el-button--primary {
+    color: var(--pet-primary-dark); /* #FF69B4 */
+}
+.theme-table .el-button--link.el-button--primary:hover {
+    color: var(--pet-primary); /* #FFB6C1 */
+}
+
 .pagination {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+  padding: 10px 0;
+}
+
+/* Pagination active color: 使用浅粉色作为激活背景 */
+.pagination :deep(.el-pager li.is-active) {
+    background-color: var(--pet-primary) !important; /* #FFB6C1 */
+    color: white !important; /* 确保高对比度 */
+    font-weight: 600;
 }
 </style>

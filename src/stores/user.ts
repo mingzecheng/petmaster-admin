@@ -14,10 +14,17 @@ export const useUserStore = defineStore('user', () => {
       const res = await loginApi(loginForm)
       token.value = res.access_token
       localStorage.setItem('token', res.access_token)
-      
+
       // 获取用户信息
-      await fetchUserInfo()
-      
+      const user = await fetchUserInfo()
+
+      // 检查角色权限：只允许 admin 和 staff 登录后台
+      if (user.role === 'member') {
+        logout()
+        ElMessage.error('此账号无权访问后台管理系统')
+        return false
+      }
+
       ElMessage.success('登录成功')
       return true
     } catch (error) {

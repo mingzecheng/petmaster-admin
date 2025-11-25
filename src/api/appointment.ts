@@ -1,9 +1,9 @@
 import request from '@/utils/request'
-import type { 
-  Appointment, 
-  AppointmentCreate, 
+import type {
+  Appointment,
+  AppointmentCreate,
   AppointmentUpdate,
-  AppointmentStatus 
+  AppointmentStatus
 } from '@/types/appointment'
 
 // 创建预约
@@ -16,7 +16,7 @@ export const createAppointment = (data: AppointmentCreate) => {
 }
 
 // 获取预约列表
-export const getAppointmentList = (params?: { 
+export const getAppointmentList = (params?: {
   skip?: number
   limit?: number
   pet_id?: number
@@ -53,5 +53,14 @@ export const cancelAppointment = (id: number) => {
   return request({
     url: `/appointments/${id}`,
     method: 'delete',
+  })
+}
+
+// 更新预约状态
+export const updateAppointmentStatus = (id: number, status: AppointmentStatus) => {
+  return request<Appointment>({
+    url: `/appointments/${id}`,
+    method: 'put',
+    data: { status },
   })
 }

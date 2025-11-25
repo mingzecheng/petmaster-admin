@@ -61,3 +61,27 @@ export const getHealthRecords = (petId: number, params?: { skip?: number; limit?
     params,
   })
 }
+
+// 上传宠物图片
+export const uploadPetImage = (petId: number, file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  return request<Pet>({
+    url: `/pets/${petId}/upload-image`,
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+}
+
+// 删除宠物图片
+export const deletePetImage = (petId: number) => {
+  return request<Pet>({
+    url: `/pets/${petId}/image`,
+    method: 'delete',
+  })
+}
+

@@ -11,14 +11,14 @@
         </div>
       </template>
 
-      <el-table v-loading="loading" :data="tableData" stripe border>
+      <el-table v-loading="loading" :data="tableData" stripe border class="el-table">
         <el-table-column type="index" label="#" width="60" align="center" />
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="pet_id" label="宠物ID" width="100" align="center" />
         <el-table-column prop="service_id" label="服务ID" width="100" align="center" />
-        <el-table-column prop="appointment_date" label="预约时间" min-width="180">
+        <el-table-column prop="appointment_time" label="预约时间" min-width="180">
           <template #default="{ row }">
-            {{ formatDate(row.appointment_date) }}
+            {{ formatDate(row.appointment_time) }}
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100" align="center">
@@ -69,9 +69,6 @@
             <el-option label="已取消" value="cancelled" />
           </el-select>
         </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="formData.notes" type="textarea" :rows="3" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -84,9 +81,11 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAppointmentList, createAppointment, updateAppointment, cancelAppointment } from '@/api/appointment'
+// 假设这些 API 存在于您的项目中
+import { getAppointmentList, createAppointment, updateAppointment, cancelAppointment } from '@/api/appointment' 
 import type { Appointment, AppointmentCreate, AppointmentUpdate } from '@/types/appointment'
 import dayjs from 'dayjs'
+import { Plus } from '@element-plus/icons-vue' // 引入图标
 
 const loading = ref(false)
 const tableData = ref<Appointment[]>([])
@@ -102,9 +101,8 @@ const currentEditId = ref(0)
 const formData = reactive<any>({
   pet_id: 1,
   service_id: 1,
-  appointment_date: '',
+  appointment_date: '',  // 前端内部使用date，提交时转为time
   status: 'pending',
-  notes: '',
 })
 
 const rules = {
@@ -116,9 +114,16 @@ const rules = {
 const loadData = async () => {
   loading.value = true
   try {
-    const data = await getAppointmentList({ skip: (currentPage.value - 1) * pageSize.value, limit: pageSize.value })
+    const params = {
+      skip: (currentPage.value - 1) * pageSize.value,
+      limit: pageSize.value
+    }
+    const data = await getAppointmentList(params)
     tableData.value = data
+    // 注意：这里需要后端返回总数，暂时使用数据长度作为示例
     total.value = data.length
+  } catch (error) {
+    ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
   }
@@ -149,6 +154,15 @@ const getStatusText = (status: string) => {
 const handleAdd = () => {
   isEdit.value = false
   dialogTitle.value = '添加预约'
+  // 重置表单
+  Object.assign(formData, {
+    pet_id: 1,
+    service_id: 1,
+    appointment_date: new Date(),
+    status: 'pending',
+    notes: '',
+  })
+  formRef.value?.resetFields()
   dialogVisible.value = true
 }
 
@@ -159,9 +173,8 @@ const handleEdit = (row: Appointment) => {
   Object.assign(formData, {
     pet_id: row.pet_id,
     service_id: row.service_id,
-    appointment_date: row.appointment_date,
+    appointment_date: dayjs(row.appointment_time).toDate(), // 后端的time转为前端的date
     status: row.status,
-    notes: row.notes,
   })
   dialogVisible.value = true
 }
@@ -181,13 +194,20 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid: boolean) => {
     if (valid) {
       try {
-        const submitData = {
-          ...formData,
-          appointment_date: dayjs(formData.appointment_date).format('YYYY-MM-DD HH:mm:ss'),
-        }
         if (isEdit.value) {
+          // 编辑时可以包含status
+          const submitData = {
+            appointment_time: dayjs(formData.appointment_date).format('YYYY-MM-DD HH:mm:ss'),
+            status: formData.status,
+          }
           await updateAppointment(currentEditId.value, submitData)
         } else {
+          // 创建时只发送必要字段
+          const submitData = {
+            pet_id: formData.pet_id,
+            service_id: formData.service_id,
+            appointment_time: dayjs(formData.appointment_date).format('YYYY-MM-DD HH:mm:ss'),
+          }
           await createAppointment(submitData)
         }
         ElMessage.success('保存成功')
@@ -208,14 +228,65 @@ onMounted(() => loadData())
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 8px 0;
 }
 .title {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 20px;
+  font-weight: 600; 
+  color: var(--pet-text);
+  display: flex;
+  align-items: center;
 }
+
+/* 标题左侧的装饰色带 */
+.title::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 20px;
+    background: var(--pet-primary-dark); /* Accent bar */
+    border-radius: 3px;
+    margin-right: 12px;
+}
+
+/* Table specific overrides */
+.el-table {
+    border-radius: var(--pet-radius);
+    overflow: hidden; /* Ensure rounded corners work */
+}
+
+/* Customizing stripe row for better contrast */
+.el-table :deep(.el-table__row.el-table__row--striped) {
+    background-color: var(--pet-background) !important; /* Use a very light background for stripes */
+}
+
+/* Customizing header */
+.el-table :deep(.el-table__header-wrapper) th {
+    background-color: var(--pet-background);
+    color: var(--pet-text);
+    font-weight: 600;
+}
+
+/* Links in table (Edit/Cancel) */
+.el-button--link.el-button--primary {
+    color: var(--pet-primary-dark); /* Darker yellow for links */
+}
+.el-button--link.el-button--primary:hover {
+    color: var(--pet-primary);
+}
+
+
 .pagination {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+  padding: 10px 0;
+}
+
+/* Pagination active color */
+.pagination :deep(.el-pager li.is-active) {
+    background-color: var(--pet-primary) !important;
+    color: var(--pet-text) !important;
+    font-weight: 600;
 }
 </style>
