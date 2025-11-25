@@ -70,12 +70,15 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useRecaptcha } from '@/composables/useRecaptcha'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { LoginForm } from '@/types/user'
 import { Orange } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const userStore = useUserStore()
+const { executeRecaptcha } = useRecaptcha()
 
 const formRef = ref<FormInstance>()
 const loading = ref(false)
@@ -100,10 +103,26 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true
       try {
-        const success = await userStore.login(loginForm)
+        // 获取 reCAPTCHA token
+        let recaptchaToken: string | undefined
+        try {
+          recaptchaToken = await executeRecaptcha('login')
+        } catch (error) {
+          console.error('reCAPTCHA error:', error)
+          ElMessage.warning('验证码加载失败，将尝试继续登录')
+        }
+
+        // 登录请求
+        const success = await userStore.login({
+          ...loginForm,
+          recaptcha_token: recaptchaToken,
+        })
+        
         if (success) {
           router.push('/dashboard')
         }
+      } catch (error: any) {
+        ElMessage.error(error.response?.data?.error?.message || '登录失败')
       } finally {
         loading.value = false
       }

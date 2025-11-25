@@ -11,6 +11,7 @@ export interface User {
 export interface LoginForm {
   username: string
   password: string
+  recaptcha_token?: string
 }
 
 export interface RegisterForm {
