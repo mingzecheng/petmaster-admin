@@ -24,8 +24,13 @@ export interface UserUpdate {
   username?: string
   mobile?: string
   email?: string
-  password?: string
   role?: 'admin' | 'staff' | 'member'
+}
+
+export interface ChangePasswordForm {
+  old_password: string
+  new_password: string
+  confirm_password: string  // 仅前端使用
 }
 
 export interface TokenResponse {

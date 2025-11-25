@@ -64,6 +64,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/transaction/index.vue'),
         meta: { title: '交易记录', icon: 'Wallet' },
       },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/profile/index.vue'),
+        meta: { title: '个人中心', icon: 'User' },
+      },
     ],
   },
   {
@@ -82,14 +88,14 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
   NProgress.start()
-  
+
   const userStore = useUserStore()
-  
+
   // 设置页面标题
-  document.title = to.meta.title 
+  document.title = to.meta.title
     ? `${to.meta.title} - 宠物管理系统`
     : '宠物管理系统'
-  
+
   if (to.meta.requiresAuth !== false) {
     // 需要登录
     if (!userStore.token) {
@@ -97,7 +103,7 @@ router.beforeEach(async (to, from, next) => {
       NProgress.done()
       return
     }
-    
+
     // 如果没有用户信息，获取用户信息
     if (!userStore.userInfo) {
       try {
@@ -108,7 +114,7 @@ router.beforeEach(async (to, from, next) => {
         return
       }
     }
-    
+
     // 权限检查
     if (to.meta.roles) {
       const roles = to.meta.roles as string[]
@@ -126,7 +132,7 @@ router.beforeEach(async (to, from, next) => {
       return
     }
   }
-  
+
   next()
 })
 
