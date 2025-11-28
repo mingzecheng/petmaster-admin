@@ -14,8 +14,16 @@
       <el-table v-loading="loading" :data="tableData" stripe border class="el-table">
         <el-table-column type="index" label="#" width="60" align="center" />
         <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="pet_id" label="宠物ID" width="100" align="center" />
-        <el-table-column prop="service_id" label="服务ID" width="100" align="center" />
+        <el-table-column label="宠物" width="150" align="center">
+          <template #default="{ row }">
+            {{ getPetName(row.pet_id) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="服务" width="150" align="center">
+          <template #default="{ row }">
+            {{ getServiceName(row.service_id) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="appointment_time" label="预约时间" min-width="180">
           <template #default="{ row }">
             {{ formatDate(row.appointment_time) }}
@@ -47,11 +55,15 @@
 
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
       <el-form ref="formRef" :model="formData" :rules="rules" label-width="100px">
-        <el-form-item label="宠物ID" prop="pet_id">
-          <el-input-number v-model="formData.pet_id" :min="1" style="width: 100%" />
+        <el-form-item label="选择宠物" prop="pet_id">
+          <el-select v-model="formData.pet_id" placeholder="请选择宠物" style="width: 100%" filterable>
+            <el-option v-for="pet in petList" :key="pet.id" :label="`${pet.name} (${pet.species})`" :value="pet.id" />
+          </el-select>
         </el-form-item>
-        <el-form-item label="服务ID" prop="service_id">
-          <el-input-number v-model="formData.service_id" :min="1" style="width: 100%" />
+        <el-form-item label="选择服务" prop="service_id">
+          <el-select v-model="formData.service_id" placeholder="请选择服务" style="width: 100%" filterable>
+            <el-option v-for="service in serviceList" :key="service.id" :label="`${service.name} - ¥${service.price}`" :value="service.id" />
+          </el-select>
         </el-form-item>
         <el-form-item label="预约时间" prop="appointment_date">
           <el-date-picker
@@ -81,14 +93,19 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-// 假设这些 API 存在于您的项目中
 import { getAppointmentList, createAppointment, updateAppointment, cancelAppointment } from '@/api/appointment' 
+import { getPetList } from '@/api/pet'
+import { getServiceList } from '@/api/service'
 import type { Appointment, AppointmentCreate, AppointmentUpdate } from '@/types/appointment'
+import type { Pet } from '@/types/pet'
+import type { Service } from '@/types/service'
 import dayjs from 'dayjs'
-import { Plus } from '@element-plus/icons-vue' // 引入图标
+import { Plus } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const tableData = ref<Appointment[]>([])
+const petList = ref<Pet[]>([])
+const serviceList = ref<Service[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
@@ -106,8 +123,8 @@ const formData = reactive<any>({
 })
 
 const rules = {
-  pet_id: [{ required: true, message: '请输入宠物ID', trigger: 'blur' }],
-  service_id: [{ required: true, message: '请输入服务ID', trigger: 'blur' }],
+  pet_id: [{ required: true, message: '请选择宠物', trigger: 'change' }],
+  service_id: [{ required: true, message: '请选择服务', trigger: 'change' }],
   appointment_date: [{ required: true, message: '请选择预约时间', trigger: 'change' }],
 }
 
@@ -220,7 +237,39 @@ const handleSubmit = async () => {
   })
 }
 
-onMounted(() => loadData())
+const loadPets = async () => {
+  try {
+    const data = await getPetList()
+    petList.value = data
+  } catch (error) {
+    console.error('加载宠物列表失败', error)
+  }
+}
+
+const loadServices = async () => {
+  try {
+    const data = await getServiceList()
+    serviceList.value = data
+  } catch (error) {
+    console.error('加载服务列表失败', error)
+  }
+}
+
+const getPetName = (petId: number) => {
+  const pet = petList.value.find(p => p.id === petId)
+  return pet ? `${pet.name} (${pet.species})` : `ID: ${petId}`
+}
+
+const getServiceName = (serviceId: number) => {
+  const service = serviceList.value.find(s => s.id === serviceId)
+  return service ? service.name : `ID: ${serviceId}`
+}
+
+onMounted(() => {
+  loadData()
+  loadPets()
+  loadServices()
+})
 </script>
 
 <style scoped>

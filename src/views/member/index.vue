@@ -7,35 +7,65 @@
         </div>
       </template>
 
-      <!-- 筛选 -->
-      <el-form :inline="true" class="filter-form">
-        <el-form-item label="用户名">
-          <el-input v-model="filters.username" placeholder="请输入用户名" clearable style="width: 200px" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="loadData">查询</el-button>
-          <el-button @click="resetFilters">重置</el-button>
-        </el-form-item>
-      </el-form>
+      <!-- 筛选区域 -->
+      <div class="filter-container">
+        <el-form :inline="true" :model="filters" class="filter-form">
+          <el-form-item label="用户名">
+            <el-input
+              v-model="filters.username"
+              placeholder="请输入用户名"
+              clearable
+              style="width: 200px"
+              @keyup.enter="loadData"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="loadData" icon="Search">查询</el-button>
+            <el-button @click="resetFilters" icon="Refresh">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
 
-      <!-- 表格 -->
-      <el-table :data="tableData" v-loading="loading" stripe border>
-        <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="username" label="用户名" min-width="120" />
+      <!-- 会员列表 -->
+      <el-table v-loading="loading" :data="tableData" stripe border class="theme-table">
+        <el-table-column type="index" label="#" width="60" align="center" />
+        <el-table-column prop="username" label="用户名" width="120" show-overflow-tooltip />
         <el-table-column prop="mobile" label="手机号" width="130" />
-        <el-table-column label="会员等级" width="120">
+        
+        <!-- 会员等级 -->
+        <el-table-column label="会员等级" width="130" align="center">
           <template #default="{ row }">
-            <el-tag v-if="row.member_level" :color="row.member_level.color">
+            <el-tag v-if="row.member_level" :color="row.member_level.color" effect="plain" style="border: none; font-weight: 600">
               {{ row.member_level.name }}
             </el-tag>
-            <span v-else class="text-muted">未设置</span>
+            <el-tag v-else type="info" effect="plain">普通会员</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="points" label="当前积分" width="100" align="right" />
-        <el-table-column prop="total_points" label="累计积分" width="100" align="right" />
-        <el-table-column label="会员卡余额" width="120" align="right">
+        
+        <!-- 积分信息 -->
+        <el-table-column label="当前积分" width="100" align="center">
           <template #default="{ row }">
-            <span v-if="row.member_card">¥{{ row.member_card.balance }}</span>
+            <div style="color: #E6A23C; font-weight: 600; font-size: 16px">{{ row.points }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="累计积分" width="100" align="center">
+          <template #default="{ row }">
+            <div class="text-muted">{{ row.total_points }}</div>
+          </template>
+        </el-table-column>
+        
+        <!-- 会员卡信息 -->
+        <el-table-column label="会员卡" width="260" align="center">
+          <template #default="{ row }">
+            <div v-if="row.member_card" class="card-info">
+              <div class="card-balance">余额: <strong style="color: #67C23A; font-size: 16px">¥{{ row.member_card.balance }}</strong></div>
+              <div class="card-meta">
+                <span class="card-number">{{ row.member_card.card_number }}</span>
+                <el-tag :type="getCardStatusType(row.member_card.status)" size="small" effect="plain">
+                  {{ getCardStatusText(row.member_card.status) }}
+                </el-tag>
+              </div>
+            </div>
             <span v-else class="text-muted">无会员卡</span>
           </template>
         </el-table-column>
@@ -47,12 +77,34 @@
             <el-button type="primary" size="small" link @click="showAdjustPoints(row)">
               调整积分
             </el-button>
-            <el-button type="success" size="small" link @click="showRecharge(row)" v-if="row.member_card">
+            <el-button type="success" size="small" link @click="showRecharge(row)" v-if="row.member_card && row.member_card.status === 'active'">
               充值
             </el-button>
-            <el-button type="warning" size="small" link @click="handleCreateCard(row)" v-else>
+            <el-button type="warning" size="small" link @click="handleCreateCard(row)" v-if="!row.member_card">
               开卡
             </el-button>
+            
+            <!-- 会员卡状态管理 -->
+            <template v-if="row.member_card">
+              <el-dropdown trigger="click" @command="(cmd) => handleCardAction(cmd, row)">
+                <el-button type="primary" size="small" link>
+                  更多 <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="freeze" v-if="row.member_card.status === 'active'">
+                      <el-icon><Lock /></el-icon> 冻结
+                    </el-dropdown-item>
+                    <el-dropdown-item command="unfreeze" v-if="row.member_card.status === 'frozen'">
+                      <el-icon><Unlock /></el-icon> 解冻
+                    </el-dropdown-item>
+                    <el-dropdown-item command="cancel" divided>
+                      <el-icon><CircleClose /></el-icon> 注销
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
           </template>
         </el-table-column>
       </el-table>
@@ -129,12 +181,7 @@
           <el-input-number v-model="rechargeForm.amount" :min="0" :precision="2" :step="100" style="width: 100%" />
         </el-form-item>
         <el-form-item label="支付方式">
-          <el-select v-model="rechargeForm.payment_method" placeholder="请选择" style="width: 100%">
-            <el-option label="现金" value="cash" />
-            <el-option label="支付宝" value="alipay" />
-            <el-option label="微信" value="wechat" />
-            <el-option label="银行卡" value="bankcard" />
-          </el-select>
+          <el-input value="支付宝" disabled />
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="rechargeForm.remark" type="textarea" :rows="2" />
@@ -151,12 +198,17 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { getUsers } from '@/api/user'
-import {
+import { ArrowDown, Lock, Unlock, CircleClose } from '@element-plus/icons-vue'
+import { getUserList } from '@/api/user'
+import { 
+  createMemberCard, 
+  rechargeMemberCard, 
+  getRechargeRecords,
+  freezeMemberCard,
+  unfreezeMemberCard,
+  cancelMemberCard,
   getUserPointRecords,
-  adjustUserPoints,
-  createMemberCard,
-  rechargeMemberCard,
+  adjustUserPoints
 } from '@/api/member'
 import type { UserWithMember, PointRecord, PointAdjust, CardRechargeRequest } from '@/types/member'
 
@@ -193,7 +245,7 @@ const rechargeFormRef = ref<FormInstance>()
 const recharging = ref(false)
 const rechargeForm = reactive<CardRechargeRequest>({
   amount: 0,
-  payment_method: 'cash',
+  payment_method: 'alipay',
   remark: '',
 })
 
@@ -207,11 +259,12 @@ const loadData = async () => {
     const params = {
       skip: (currentPage.value - 1) * pageSize.value,
       limit: pageSize.value,
+      role: 'member',  // 只加载会员用户
       ...filters,
     }
-    const data = await getUsers(params) as any
-    tableData.value = data.users || []
-    total.value = data.total || 0
+    const data = await getUserList(params) as any
+    tableData.value = data || []
+    total.value = data.length || 0
   } catch (error: any) {
     ElMessage.error(error.response?.data?.detail || '加载失败')
   } finally {
@@ -266,7 +319,7 @@ const handleAdjustPoints = async () => {
 const showRecharge = (row: UserWithMember) => {
   currentUser.value = row
   rechargeForm.amount = 0
-  rechargeForm.payment_method = 'cash'
+  rechargeForm.payment_method = 'alipay'
   rechargeForm.remark = ''
   rechargeDialogVisible.value = true
 }
@@ -307,6 +360,87 @@ const handleCreateCard = async (row: UserWithMember) => {
   }
 }
 
+// 会员卡状态管理
+const handleCardAction = async (command: string, row: UserWithMember) => {
+  if (!row.member_card) return
+  
+  const cardId = row.member_card.id
+  const cardNumber = row.member_card.card_number
+  
+  try {
+    let confirmMessage = ''
+    let successMessage = ''
+    let action: () => Promise<any>
+    
+    switch (command) {
+      case 'freeze':
+        confirmMessage = `确定要冻结会员卡 ${cardNumber} 吗？冻结后该卡将无法使用。`
+        successMessage = '会员卡已冻结'
+        action = () => freezeMemberCard(cardId)
+        break
+      case 'unfreeze':
+        confirmMessage = `确定要解冻会员卡 ${cardNumber} 吗？`
+        successMessage = '会员卡已解冻'
+        action = () => unfreezeMemberCard(cardId)
+        break
+      case 'cancel':
+        if (row.member_card.balance > 0) {
+          ElMessage.warning('会员卡余额不为零，无法注销')
+          return
+        }
+        confirmMessage = `确定要注销会员卡 ${cardNumber} 吗？\n\n注意：\n1. 注销后会删除会员卡记录\n2. 用户可以重新办理会员卡\n3. 此操作不可恢复`
+        successMessage = '会员卡已注销，用户可重新办卡'
+        action = () => cancelMemberCard(cardId)
+        break
+      default:
+        return
+    }
+    
+    await ElMessageBox.confirm(confirmMessage, '提示', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
+    
+    await action()
+    ElMessage.success(successMessage)
+    
+    // 如果是注销操作，手动清除本地的 member_card 状态，并重置等级和积分
+    if (command === 'cancel') {
+      row.member_card = null as any
+      row.member_level = null as any
+      row.points = 0
+      row.total_points = 0
+    }
+    
+    await loadData()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.response?.data?.detail || '操作失败')
+    }
+  }
+}
+
+// 获取会员卡状态类型
+const getCardStatusType = (status: string) => {
+  const typeMap: Record<string, any> = {
+    'active': 'success',
+    'frozen': 'warning',
+    'cancelled': 'info'
+  }
+  return typeMap[status] || 'info'
+}
+
+// 获取会员卡状态文本
+const getCardStatusText = (status: string) => {
+  const textMap: Record<string, string> = {
+    'active': '正常',
+    'frozen': '冻结',
+    'cancelled': '已注销'
+  }
+  return textMap[status] || status
+}
+
 onMounted(() => {
   loadData()
 })
@@ -315,39 +449,102 @@ onMounted(() => {
 <style scoped>
 .member-page {
   padding: 20px;
+  background-color: var(--pet-background-light, #f5f7fa);
+  min-height: calc(100vh - 84px);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 4px 0;
 }
 
 .title {
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--pet-text, #303133);
+  display: flex;
+  align-items: center;
+}
+
+.title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  background: var(--pet-primary, #409eff);
+  border-radius: 2px;
+  margin-right: 10px;
+}
+
+/* 筛选区域优化 */
+.filter-container {
+  background-color: #fff;
+  padding: 18px 20px 0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .filter-form {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
-.pagination {
-  margin-top: 20px;
+/* 表格优化 */
+.theme-table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 会员卡信息样式 */
+.card-info {
+  background: linear-gradient(to right bottom, #f8f9fa, #eef1f6);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ebeef5;
+}
+
+.card-balance {
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.card-meta {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
 }
 
+.card-number {
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 状态文本颜色 */
 .text-muted {
   color: #909399;
+  font-size: 13px;
 }
 
 .text-success {
   color: #67c23a;
+  font-weight: 600;
 }
 
 .text-danger {
   color: #f56c6c;
+  font-weight: 600;
+}
+
+/* 分页样式 */
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 0;
 }
 </style>

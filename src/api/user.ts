@@ -1,5 +1,6 @@
 import request from '@/utils/request'
-import type { User, LoginForm, UserUpdate, TokenResponse } from '@/types/user'
+import type { User, LoginForm, UserUpdate, UserCreate, TokenResponse } from '@/types/user'
+import type { UserWithMember } from '@/types/member'
 // RegisterForm removed - registration only available in mini-program
 
 // 登录
@@ -30,11 +31,20 @@ export const updateCurrentUser = (data: UserUpdate) => {
 }
 
 // 获取用户列表（管理员）
-export const getUserList = (params?: { skip?: number; limit?: number }) => {
-  return request<User[]>({
+export const getUserList = (params?: { skip?: number; limit?: number; role?: string; username?: string }) => {
+  return request<UserWithMember[]>({
     url: '/users/',
     method: 'get',
     params,
+  })
+}
+
+// 创建用户（管理员）
+export const createUser = (data: UserCreate) => {
+  return request<User>({
+    url: '/users/',
+    method: 'post',
+    data,
   })
 }
 

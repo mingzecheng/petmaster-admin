@@ -21,6 +21,14 @@ export interface RegisterForm {
   email?: string
 }
 
+export interface UserCreate {
+  username: string
+  password: string
+  mobile?: string
+  email?: string
+  role: 'admin' | 'staff' | 'member'
+}
+
 export interface UserUpdate {
   username?: string
   mobile?: string

@@ -4,6 +4,10 @@
       <template #header>
         <div class="card-header">
           <span class="title">用户管理</span>
+          <el-button type="primary" @click="handleCreate">
+            <el-icon style="margin-right: 5px"><Plus /></el-icon>
+            新增用户
+          </el-button>
         </div>
       </template>
 
@@ -83,6 +87,14 @@
         <el-form-item label="用户名" prop="username">
           <el-input v-model="formData.username" placeholder="请输入用户名" />
         </el-form-item>
+        <el-form-item v-if="isCreateMode" label="密码" prop="password">
+          <el-input
+            v-model="formData.password"
+            type="password"
+            placeholder="请输入密码"
+            show-password
+          />
+        </el-form-item>
         <el-form-item label="手机号" prop="mobile">
           <el-input v-model="formData.mobile" placeholder="请输入手机号" />
         </el-form-item>
@@ -110,9 +122,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { getUserList, updateUser, deleteUser } from '@/api/user'
-import type { User, UserUpdate } from '@/types/user'
+import { getUserList, createUser, updateUser, deleteUser } from '@/api/user'
+import type { User, UserUpdate, UserCreate } from '@/types/user'
 import dayjs from 'dayjs'
 
 const loading = ref(false)
@@ -126,9 +139,11 @@ const dialogTitle = ref('编辑用户')
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
 const currentEditId = ref(0)
+const isCreateMode = ref(false)
 
-const formData = reactive<UserUpdate>({
+const formData = reactive<UserCreate>({
   username: '',
+  password: '',
   mobile: '',
   email: '',
   role: 'member',
@@ -136,10 +151,14 @@ const formData = reactive<UserUpdate>({
 
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于6个字符', trigger: 'blur' },
+  ],
   role: [{ required: true, message: '请选择角色', trigger: 'change' }],
 }
 
-// ------------------- 后端交互逻辑保持不变 -------------------
+// ------------------- 后端交互逻辑 -------------------
 const loadData = async () => {
   loading.value = true
   try {
@@ -154,9 +173,19 @@ const loadData = async () => {
   }
 }
 
+const handleCreate = () => {
+  isCreateMode.value = true
+  dialogTitle.value = '新增用户'
+  resetForm()
+  dialogVisible.value = true
+}
+
 const handleEdit = (row: User) => {
+  isCreateMode.value = false
+  dialogTitle.value = '编辑用户'
   currentEditId.value = row.id
   formData.username = row.username
+  formData.password = '' // 编辑模式不显示密码
   formData.mobile = row.mobile || ''
   formData.email = row.email || ''
   formData.role = row.role
@@ -188,19 +217,32 @@ const handleSubmit = async () => {
     if (valid) {
       submitting.value = true
       try {
-        await updateUser(currentEditId.value, formData)
-        ElMessage.success('保存成功')
+        if (isCreateMode.value) {
+          // 创建新用户
+          await createUser(formData)
+          ElMessage.success('用户创建成功')
+        } else {
+          // 更新用户 - 不包含密码
+          const updateData: UserUpdate = {
+            username: formData.username,
+            mobile: formData.mobile,
+            email: formData.email,
+            role: formData.role,
+          }
+          await updateUser(currentEditId.value, updateData)
+          ElMessage.success('用户更新成功')
+        }
         dialogVisible.value = false
         loadData()
       } catch (error) {
-        ElMessage.error('保存失败')
+        ElMessage.error(isCreateMode.value ? '创建失败' : '更新失败')
       } finally {
         submitting.value = false
       }
     }
   })
 }
-// ------------------- 后端交互逻辑保持不变 -------------------
+// ------------------- 后端交互逻辑 -------------------
 
 // 辅助函数（保持不变）
 const formatDate = (date: string) => {
@@ -226,7 +268,15 @@ const getRoleText = (role: string) => {
 }
 
 const resetForm = () => {
-  formRef.value?.resetFields()
+  if (formRef.value) {
+    formRef.value.resetFields()
+  }
+  // 重置表单数据
+  formData.username = ''
+  formData.password = ''
+  formData.mobile = ''
+  formData.email = ''
+  formData.role = 'member'
 }
 
 onMounted(() => {

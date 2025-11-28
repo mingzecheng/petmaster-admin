@@ -24,7 +24,7 @@
         <el-table-column prop="price" label="价格" width="120" align="center">
           <template #default="{ row }">¥{{ row.price }}</template>
         </el-table-column>
-        <el-table-column prop="duration" label="时长(分钟)" width="120" align="center" />
+        <el-table-column prop="duration_minutes" label="时长(分钟)" width="120" align="center" />
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
         <el-table-column label="操作" width="150" align="center">
           <template #default="{ row }">
@@ -55,7 +55,7 @@
           <el-input-number v-model="formData.price" :min="0" :precision="2" style="width: 100%" />
         </el-form-item>
         <el-form-item label="时长(分钟)">
-          <el-input-number v-model="formData.duration" :min="0" style="width: 100%" />
+          <el-input-number v-model="formData.duration_minutes" :min="0" style="width: 100%" />
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="formData.description" type="textarea" :rows="3" />
@@ -89,7 +89,7 @@ const currentEditId = ref(0)
 const formData = reactive<ServiceCreate>({
   name: '',
   price: 0,
-  duration: 0,
+  duration_minutes: 0,
   description: '',
 })
 
@@ -121,7 +121,7 @@ const handleAdd = () => {
   dialogTitle.value = '添加服务'
   // 重置表单
   formRef.value?.resetFields()
-  Object.assign(formData, { name: '', price: 0, duration: 0, description: '' })
+  Object.assign(formData, { name: '', price: 0, duration_minutes: 0, description: '' })
   dialogVisible.value = true
 }
 

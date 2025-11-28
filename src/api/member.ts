@@ -109,7 +109,7 @@ export const earnPointsFromTransaction = (transactionId: number) => {
  */
 export const createMemberCard = (data: MemberCardCreate) => {
     return request<MemberCard>({
-        url: '/member_cards',
+        url: '/member_cards/',
         method: 'post',
         data,
     })
@@ -153,5 +153,35 @@ export const getRechargeRecords = (cardId: number) => {
     return request<CardRechargeRecord[]>({
         url: `/member_cards/${cardId}/recharge_records`,
         method: 'get',
+    })
+}
+
+/**
+ * 冻结会员卡
+ */
+export const freezeMemberCard = (cardId: number) => {
+    return request<MemberCard>({
+        url: `/member_cards/${cardId}/freeze`,
+        method: 'post',
+    })
+}
+
+/**
+ * 解冻会员卡
+ */
+export const unfreezeMemberCard = (cardId: number) => {
+    return request<MemberCard>({
+        url: `/member_cards/${cardId}/unfreeze`,
+        method: 'post',
+    })
+}
+
+/**
+ * 注销会员卡
+ */
+export const cancelMemberCard = (cardId: number) => {
+    return request({
+        url: `/member_cards/${cardId}/cancel`,
+        method: 'post',
     })
 }
