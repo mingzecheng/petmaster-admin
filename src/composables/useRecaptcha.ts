@@ -99,6 +99,13 @@ export function useRecaptcha() {
             throw new Error('renderV2 只能在 v2 模式下使用')
         }
 
+        // 检查 V2 Site Key 是否已配置
+        if (!V2_SITE_KEY) {
+            const errorMsg = 'reCAPTCHA v2 Site Key 未配置！请在 .env 文件中添加 VITE_RECAPTCHA_V2_SITE_KEY'
+            console.error(errorMsg)
+            throw new Error(errorMsg)
+        }
+
         await loadRecaptcha()
 
         return new Promise((resolve, reject) => {
@@ -110,11 +117,12 @@ export function useRecaptcha() {
                         size: 'normal',
                         callback: callback,
                     })
+                    // console.log('reCAPTCHA v2 渲染成功, Widget ID:', widgetId)
                     v2WidgetId.value = widgetId
                     resolve(widgetId)
                 } catch (error) {
-                    console.error('reCAPTCHA v2 render error:', error)
-                    reject(new Error('验证框渲染失败'))
+                    // console.error('reCAPTCHA v2 render error:', error)
+                    reject(new Error('验证框渲染失败: ' + (error instanceof Error ? error.message : String(error))))
                 }
             })
         })
@@ -176,6 +184,10 @@ export function useRecaptcha() {
     const executeRecaptcha = async (action: string = 'login'): Promise<string> => {
         try {
             if (version === 'v2') {
+                // v2: 检查配置
+                if (!V2_SITE_KEY) {
+                    throw new Error('reCAPTCHA v2 Site Key 未配置！请在 .env 文件中添加 VITE_RECAPTCHA_V2_SITE_KEY')
+                }
                 // v2: 获取用户完成验证后的响应
                 const response = getV2Response()
                 if (!response) {

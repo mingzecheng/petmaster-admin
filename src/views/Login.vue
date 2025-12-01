@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useRecaptcha } from '@/composables/useRecaptcha'
@@ -89,11 +89,12 @@ import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const userStore = useUserStore()
-const { version: recaptchaVersion, renderV2, executeRecaptcha } = useRecaptcha()
+const { version: recaptchaVersion, renderV2, executeRecaptcha, resetV2 } = useRecaptcha()
 
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const showRecaptchaModal = ref(false)
+const v2WidgetId = ref<number | null>(null)
 
 const loginForm = reactive<LoginForm>({
   username: '',
@@ -108,18 +109,26 @@ const rules: FormRules = {
   ],
 }
 
-// v2: 组件挂载时渲染验证框
-onMounted(async () => {
-  if (recaptchaVersion === 'v2') {
-    try {
-      // 传入回调：验证成功后自动关闭弹窗并尝试登录
-      await renderV2('recaptcha-container', (token) => {
-        showRecaptchaModal.value = false
-        handleLogin()
-      })
-    } catch (error) {
-      console.error('Failed to render reCAPTCHA v2:', error)
-      ElMessage.warning('验证码加载失败，请刷新页面重试')
+// 监听弹窗显示状态，延迟渲染 reCAPTCHA v2 以确保显示正常
+watch(showRecaptchaModal, async (visible) => {
+  if (visible && recaptchaVersion === 'v2') {
+    await nextTick() // 等待 DOM 更新，确保容器可见
+    
+    if (v2WidgetId.value === null) {
+      // 首次渲染
+      try {
+        const widgetId = await renderV2('recaptcha-container', (token) => {
+          showRecaptchaModal.value = false
+          handleLogin()
+        })
+        v2WidgetId.value = widgetId
+      } catch (error) {
+        console.error('Failed to render reCAPTCHA v2:', error)
+        ElMessage.warning('验证码加载失败，请刷新页面重试')
+      }
+    } else {
+      // 已渲染过，重置状态
+      resetV2(v2WidgetId.value)
     }
   }
 })
