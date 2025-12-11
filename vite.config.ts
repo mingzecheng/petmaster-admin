@@ -24,6 +24,8 @@ export default defineConfig({
     },
   },
   server: {
+    // 允许局域网访问
+    host: '0.0.0.0',
     port: 3000,
     proxy: {
       '/api/v1': {
@@ -33,5 +35,6 @@ export default defineConfig({
         ws: true,
       },
     },
+    allowedHosts: ['audrina-featherlight-jerrold.ngrok-free.dev']
   },
 })

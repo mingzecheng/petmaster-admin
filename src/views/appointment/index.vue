@@ -133,7 +133,7 @@ const loadData = async () => {
   try {
     const params = {
       skip: (currentPage.value - 1) * pageSize.value,
-      limit: pageSize.value
+      //limit: pageSize.value
     }
     const data = await getAppointmentList(params)
     tableData.value = data
