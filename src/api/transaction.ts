@@ -1,58 +1,62 @@
+/**
+ * @description 支付记录 API（原交易模块改为使用支付记录）
+ */
 import request from '@/utils/request'
-import type { Transaction, TransactionCreate, TransactionType } from '@/types/transaction'
+import type { Payment, PaymentCreate, PaymentStatus } from '@/types/transaction'
 
-// 创建交易记录
-export const createTransaction = (data: TransactionCreate) => {
-  return request<Transaction>({
-    url: '/transactions/',
-    method: 'post',
-    data,
-  })
-}
-
-// 获取交易列表
-export const getTransactionList = (params?: { 
+/**
+ * 获取支付列表
+ * @param params - 查询参数
+ */
+export const getTransactionList = (params?: {
   skip?: number
   limit?: number
   user_id?: number
-  transaction_type?: TransactionType
+  pay_status?: PaymentStatus
 }) => {
-  return request<Transaction[]>({
-    url: '/transactions/',
+  return request<Payment[]>({
+    url: '/payments/',
     method: 'get',
     params,
   })
 }
 
-// 获取我的交易记录
-export const getMyTransactions = (params?: { skip?: number; limit?: number }) => {
-  return request<Transaction[]>({
-    url: '/transactions/me',
-    method: 'get',
-    params,
-  })
-}
-
-// 获取我的总积分
-export const getMyPoints = () => {
-  return request<{ user_id: number; total_points: number }>({
-    url: '/transactions/me/points',
-    method: 'get',
-  })
-}
-
-// 获取我的总消费
-export const getMySpending = () => {
-  return request<{ user_id: number; total_spending: number }>({
-    url: '/transactions/me/spending',
+/**
+ * 获取支付详情
+ * @param outTradeNo - 商户订单号
+ */
+export const getPaymentStatus = (outTradeNo: string) => {
+  return request<{
+    out_trade_no: string
+    status: PaymentStatus
+    amount: string
+    subject: string
+    description?: string
+    created_at: string
+    paid_at?: string
+  }>({
+    url: `/payments/${outTradeNo}/status`,
     method: 'get',
   })
 }
 
-// 获取交易详情
-export const getTransaction = (id: number) => {
-  return request<Transaction>({
-    url: `/transactions/${id}`,
-    method: 'get',
+/**
+ * 创建支付宝支付
+ * @param data - 支付数据
+ */
+export const createAlipayPayment = (data: PaymentCreate) => {
+  return request<{
+    payment_id: number
+    out_trade_no: string
+    amount: string
+    subject: string
+    qr_code?: string
+    pay_url?: string
+    status: string
+    message: string
+  }>({
+    url: '/payments/alipay/create',
+    method: 'post',
+    data,
   })
 }

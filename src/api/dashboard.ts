@@ -32,11 +32,11 @@ export interface ServiceDistributionData {
 export const getStatistics = async (): Promise<DashboardStats> => {
     try {
         // 并行请求多个 API (request已经在拦截器中返回response.data)
-        const [usersResponse, petsResponse, appointmentsResponse, transactionsResponse] = await Promise.all([
+        const [usersResponse, petsResponse, appointmentsResponse, paymentsResponse] = await Promise.all([
             request<any[]>({ url: '/users/', method: 'get', params: { skip: 0, limit: 1000 } }),
             request<any[]>({ url: '/pets/', method: 'get', params: { skip: 0, limit: 1000 } }),
             request<any[]>({ url: '/appointments/', method: 'get', params: { skip: 0, limit: 1000 } }),
-            request<any[]>({ url: '/transactions/', method: 'get', params: { skip: 0, limit: 1000 } }),
+            request<any[]>({ url: '/payments/', method: 'get', params: { skip: 0, limit: 1000 } }),
         ])
 
         // 统计各角色用户数
@@ -51,13 +51,13 @@ export const getStatistics = async (): Promise<DashboardStats> => {
             apt.appointment_time?.startsWith(today)
         ).length
 
-        // 计算今日营收（从交易记录中统计）
-        const todayRevenue = (transactionsResponse as unknown as any[])
-            .filter((txn: any) => {
-                const txnDate = txn.created_at ? new Date(txn.created_at).toISOString().split('T')[0] : ''
-                return txnDate === today && txn.transaction_type === 'payment'
+        // 计算今日营收（从支付记录中统计已支付的订单）
+        const todayRevenue = (paymentsResponse as unknown as any[])
+            .filter((payment: any) => {
+                const paymentDate = payment.paid_at ? new Date(payment.paid_at).toISOString().split('T')[0] : ''
+                return paymentDate === today && payment.status === 'paid'
             })
-            .reduce((sum: number, txn: any) => sum + (txn.amount || 0), 0)
+            .reduce((sum: number, payment: any) => sum + (parseFloat(payment.amount) || 0), 0)
 
         return {
             totalUsers: users.length || 0,

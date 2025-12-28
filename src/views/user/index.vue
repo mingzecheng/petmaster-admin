@@ -103,7 +103,6 @@
         </el-form-item>
         <el-form-item label="角色" prop="role">
           <el-select v-model="formData.role" placeholder="请选择角色" style="width: 100%">
-            <el-option label="管理员" value="admin" />
             <el-option label="员工" value="staff" />
             <el-option label="会员" value="member" />
           </el-select>
@@ -149,12 +148,64 @@ const formData = reactive<UserCreate>({
   role: 'member',
 })
 
+/** 正则表达式 */
+const REGEX = {
+  /** 用户名：字母开头，3-20位字母、数字、下划线 */
+  username: /^[a-zA-Z][a-zA-Z0-9_]{2,19}$/,
+  /** 密码：6-20位，必须包含字母和数字 */
+  password: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,20}$/,
+  /** 手机号：11位中国大陆手机号 */
+  mobile: /^1[3-9]\d{9}$/,
+  /** 邮箱 */
+  email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+}
+
+/** 自定义验证器 */
+const validateUsername = (_rule: any, value: string, callback: any) => {
+  if (!value) {
+    callback(new Error('请输入用户名'))
+  } else if (!REGEX.username.test(value)) {
+    callback(new Error('字母开头，3-20位字母数字下划线'))
+  } else {
+    callback()
+  }
+}
+
+const validatePassword = (_rule: any, value: string, callback: any) => {
+  if (!value) {
+    callback(new Error('请输入密码'))
+  } else if (!REGEX.password.test(value)) {
+    callback(new Error('6-20位，必须包含字母和数字'))
+  } else {
+    callback()
+  }
+}
+
+const validateMobile = (_rule: any, value: string, callback: any) => {
+  if (!value) {
+    callback() // 手机号可选
+  } else if (!REGEX.mobile.test(value)) {
+    callback(new Error('请输入正确的11位手机号'))
+  } else {
+    callback()
+  }
+}
+
+const validateEmail = (_rule: any, value: string, callback: any) => {
+  if (!value) {
+    callback() // 邮箱可选
+  } else if (!REGEX.email.test(value)) {
+    callback(new Error('请输入正确的邮箱地址'))
+  } else {
+    callback()
+  }
+}
+
 const rules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6个字符', trigger: 'blur' },
-  ],
+  username: [{ required: true, validator: validateUsername, trigger: 'blur' }],
+  password: [{ required: true, validator: validatePassword, trigger: 'blur' }],
+  mobile: [{ validator: validateMobile, trigger: 'blur' }],
+  email: [{ validator: validateEmail, trigger: 'blur' }],
   role: [{ required: true, message: '请选择角色', trigger: 'change' }],
 }
 
@@ -218,7 +269,12 @@ const handleSubmit = async () => {
       submitting.value = true
       try {
         if (isCreateMode.value) {
-          // 创建新用户
+          // 创建新用户 - 禁止创建管理员
+          if (formData.role === 'admin') {
+            ElMessage.error('无法创建管理员账户')
+            submitting.value = false
+            return
+          }
           await createUser(formData)
           ElMessage.success('用户创建成功')
         } else {

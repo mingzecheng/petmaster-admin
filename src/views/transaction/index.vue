@@ -3,7 +3,7 @@
     <el-card shadow="hover">
       <template #header>
         <div class="card-header">
-          <span class="title">交易记录</span>
+          <span class="title">支付记录</span>
         </div>
       </template>
 
@@ -15,31 +15,33 @@
         class="theme-table"
       >
         <el-table-column type="index" label="#" width="60" align="center" />
-        <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="user_id" label="用户ID" width="100" align="center" />
-        <el-table-column prop="transaction_type" label="交易类型" width="120" align="center">
+        <el-table-column prop="out_trade_no" label="订单号" width="280" show-overflow-tooltip />
+        <el-table-column prop="subject" label="商品标题" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="amount" label="金额" width="120" align="center">
           <template #default="{ row }">
-            <el-tag :type="getTypeColor(row.transaction_type)">
-              {{ getTypeText(row.transaction_type) }}
+            <span class="amount">¥{{ row.amount }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="method" label="支付方式" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag size="small">{{ getMethodText(row.method) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getStatusColor(row.status)">
+              {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="amount" label="金额" width="120" align="center">
-          <template #default="{ row }">
-            <span :style="{ color: row.amount >= 0 ? '#67c23a' : '#f56c6c' }">
-              ¥{{ row.amount }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="points_earned" label="积分" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.points_earned" type="success">+{{ row.points_earned }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="created_at" label="交易时间" width="180">
+        <el-table-column prop="created_at" label="创建时间" width="180">
           <template #default="{ row }">
             {{ formatDate(row.created_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="updated_at" label="更新时间" width="180">
+          <template #default="{ row }">
+            {{ formatDate(row.updated_at) }}
           </template>
         </el-table-column>
       </el-table>
@@ -60,15 +62,27 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getTransactionList } from '@/api/transaction'
-import type { Transaction } from '@/types/transaction'
+import type { Payment, PaymentStatus, PaymentMethod } from '@/types/transaction'
 import dayjs from 'dayjs'
 
+/** 加载状态 */
 const loading = ref(false)
-const tableData = ref<Transaction[]>([])
+
+/** 表格数据 */
+const tableData = ref<Payment[]>([])
+
+/** 当前页码 */
 const currentPage = ref(1)
-const pageSize = ref(10) // 保持默认值，尽管 layout 中没有显示 sizes
+
+/** 每页条数 */
+const pageSize = ref(10)
+
+/** 总条数 */
 const total = ref(0)
 
+/**
+ * 加载数据
+ */
 const loadData = async () => {
   loading.value = true
   try {
@@ -78,37 +92,62 @@ const loadData = async () => {
     }
     const data = await getTransactionList(params)
     tableData.value = data
-    // 注意：这里需要后端返回总数，暂时使用数据长度作为示例
-    total.value = data.length
+    // 注意：后端 API 目前不返回总条数，暂时使用数据长度估算
+    total.value = data.length >= pageSize.value 
+      ? currentPage.value * pageSize.value + 1 
+      : (currentPage.value - 1) * pageSize.value + data.length
   } catch (error) {
+    console.error('加载支付记录失败:', error)
     ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * 格式化日期
+ */
 const formatDate = (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm:ss')
 
-const getTypeColor = (type: string) => {
-  const colors: Record<string, any> = {
-    purchase: 'primary',
-    service: 'success',
-    boarding: 'warning',
-    refund: 'info',
+/**
+ * 获取支付状态标签颜色
+ */
+const getStatusColor = (status: PaymentStatus): 'primary' | 'success' | 'warning' | 'info' | 'danger' => {
+  const colors: Record<PaymentStatus, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
+    pending: 'warning',
+    paid: 'success',
+    failed: 'danger',
+    cancelled: 'info',
+    refunded: 'primary',
   }
-  // 由于全局 primary 被定义为粉色系，这里使用 primary 来适配
-  if (type === 'purchase') return 'primary'
-  return colors[type] || ''
+  return colors[status] || 'info'
 }
 
-const getTypeText = (type: string) => {
-  const texts: Record<string, string> = {
-    purchase: '商品购买',
-    service: '服务消费',
-    boarding: '寄养消费',
-    refund: '退款',
+/**
+ * 获取支付状态文本
+ */
+const getStatusText = (status: PaymentStatus) => {
+  const texts: Record<PaymentStatus, string> = {
+    pending: '待支付',
+    paid: '已支付',
+    failed: '支付失败',
+    cancelled: '已取消',
+    refunded: '已退款',
   }
-  return texts[type] || type
+  return texts[status] || status
+}
+
+/**
+ * 获取支付方式文本
+ */
+const getMethodText = (method: PaymentMethod) => {
+  const texts: Record<PaymentMethod, string> = {
+    alipay: '支付宝',
+    wechat: '微信',
+    card: '银行卡',
+    cash: '现金',
+  }
+  return texts[method] || method
 }
 
 onMounted(() => loadData())
@@ -175,9 +214,14 @@ onMounted(() => loadData())
     font-weight: 600;
 }
 
-/* 增强金额的视觉强调 */
-.el-table :deep(.el-table__cell span[style*="#67c23a"]),
-.el-table :deep(.el-table__cell span[style*="#f56c6c"]) {
+/* 金额样式 */
+.amount {
     font-weight: 600;
+    color: #67c23a;
+}
+
+/* 无数据样式 */
+.no-data {
+    color: #c0c4cc;
 }
 </style>

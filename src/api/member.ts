@@ -93,11 +93,11 @@ export const adjustUserPoints = (userId: number, data: PointAdjust) => {
 }
 
 /**
- * 消费获得积分
+ * 支付获得积分
  */
-export const earnPointsFromTransaction = (transactionId: number) => {
+export const earnPointsFromPayment = (paymentId: number) => {
     return request<PointRecord>({
-        url: `/points/transactions/${transactionId}/earn`,
+        url: `/points/payments/${paymentId}/earn`,
         method: 'post',
     })
 }
