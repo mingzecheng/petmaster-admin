@@ -25,48 +25,36 @@ export interface ServiceDistributionData {
     count: number
 }
 
+/** 后端返回的统计数据（蛇形命名） */
+interface DashboardStatsResponse {
+    total_users: number
+    total_admins: number
+    total_staff: number
+    total_members: number
+    total_pets: number
+    today_appointments: number
+    today_revenue: string | number
+}
+
 /**
  * 获取 Dashboard 统计数据
- * 通过组合调用多个API来获取统计信息
+ * 直接调用后端API，不在前端计算
  */
 export const getStatistics = async (): Promise<DashboardStats> => {
     try {
-        // 并行请求多个 API (request已经在拦截器中返回response.data)
-        const [usersResponse, petsResponse, appointmentsResponse, paymentsResponse] = await Promise.all([
-            request<any[]>({ url: '/users/', method: 'get', params: { skip: 0, limit: 1000 } }),
-            request<any[]>({ url: '/pets/', method: 'get', params: { skip: 0, limit: 1000 } }),
-            request<any[]>({ url: '/appointments/', method: 'get', params: { skip: 0, limit: 1000 } }),
-            request<any[]>({ url: '/payments/', method: 'get', params: { skip: 0, limit: 1000 } }),
-        ])
-
-        // 统计各角色用户数
-        const users = usersResponse as unknown as any[]
-        const totalAdmins = users.filter(u => u.role === 'admin').length
-        const totalStaff = users.filter(u => u.role === 'staff').length
-        const totalMembers = users.filter(u => u.role === 'member').length
-
-        // 计算今日预约数
-        const today = new Date().toISOString().split('T')[0]
-        const todayAppointments = (appointmentsResponse as unknown as any[]).filter((apt: any) =>
-            apt.appointment_time?.startsWith(today)
-        ).length
-
-        // 计算今日营收（从支付记录中统计已支付的订单）
-        const todayRevenue = (paymentsResponse as unknown as any[])
-            .filter((payment: any) => {
-                const paymentDate = payment.paid_at ? new Date(payment.paid_at).toISOString().split('T')[0] : ''
-                return paymentDate === today && payment.status === 'paid'
-            })
-            .reduce((sum: number, payment: any) => sum + (parseFloat(payment.amount) || 0), 0)
+        const result = await request<DashboardStatsResponse>({
+            url: '/dashboard/stats/',
+            method: 'get'
+        })
 
         return {
-            totalUsers: users.length || 0,
-            totalAdmins: totalAdmins || 0,
-            totalStaff: totalStaff || 0,
-            totalMembers: totalMembers || 0,
-            totalPets: (petsResponse as unknown as any[]).length || 0,
-            todayAppointments: todayAppointments || 0,
-            todayRevenue: todayRevenue || 0,
+            totalUsers: result.total_users || 0,
+            totalAdmins: result.total_admins || 0,
+            totalStaff: result.total_staff || 0,
+            totalMembers: result.total_members || 0,
+            totalPets: result.total_pets || 0,
+            todayAppointments: result.today_appointments || 0,
+            todayRevenue: parseFloat(String(result.today_revenue)) || 0,
         }
     } catch (error) {
         console.error('获取统计数据失败:', error)
@@ -79,6 +67,29 @@ export const getStatistics = async (): Promise<DashboardStats> => {
             todayAppointments: 0,
             todayRevenue: 0,
         }
+    }
+}
+
+export interface TrendData {
+    date: string
+    appointments: number
+    revenue: number
+    boarding: number
+}
+
+/**
+ * 获取最近7天趋势数据
+ */
+export const getTrends = async (): Promise<TrendData[]> => {
+    try {
+        const result = await request<TrendData[]>({
+            url: '/dashboard/trends/',
+            method: 'get'
+        })
+        return result || []
+    } catch (error) {
+        console.error('获取趋势数据失败:', error)
+        return []
     }
 }
 

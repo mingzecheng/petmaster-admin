@@ -82,8 +82,15 @@
         <el-card class="chart-card" shadow="hover">
           <template #header>
             <div class="card-header">
-              <span>最近7天预约趋势</span>
-              <el-icon color="var(--pet-primary-dark)"><TrendCharts /></el-icon>
+              <span>最近7天趋势</span>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <el-radio-group v-model="chartType" size="small" @change="updateChart">
+                  <el-radio-button label="appointments">预约</el-radio-button>
+                  <el-radio-button label="revenue">营收</el-radio-button>
+                  <el-radio-button label="boarding">寄养</el-radio-button>
+                </el-radio-group>
+                <el-icon color="var(--pet-primary-dark)"><TrendCharts /></el-icon>
+              </div>
             </div>
           </template>
           <div ref="trendChartRef" class="chart-container"></div>
@@ -126,7 +133,7 @@
               </div>
               <div class="item-content">
                 <div class="item-title">预约 #{{ item.id }}</div>
-                <div class="item-time">{{ formatDate(item.appointment_date) }}</div>
+                <div class="item-time">{{ formatDate(item.appointment_time) }}</div>
               </div>
               <el-tag :type="getStatusType(item.status)" class="status-tag">{{ getStatusText(item.status) }}</el-tag>
             </div>
@@ -170,15 +177,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { getUserList } from '@/api/user'
-import { getPetList } from '@/api/pet'
 import { getAppointmentList } from '@/api/appointment'
 import { getOngoingBoarding } from '@/api/boarding'
 import type { Appointment } from '@/types/appointment'
 import type { Boarding } from '@/types/boarding'
 import dayjs from 'dayjs'
-import { User, Orange, Calendar, Wallet, TrendCharts, PieChart, DataAnalysis, House, ArrowRight, UserFilled, Avatar } from '@element-plus/icons-vue' 
-import { getStatistics, getAppointmentTrend, getServiceDistribution } from '@/api/dashboard'
+import { User, Orange, Calendar, Wallet, TrendCharts, PieChart, House, ArrowRight, UserFilled, Avatar } from '@element-plus/icons-vue' 
+import { getStatistics, getTrends, getServiceDistribution } from '@/api/dashboard'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
 
@@ -203,6 +208,9 @@ const trendChartRef = ref<HTMLDivElement>()
 const pieChartRef = ref<HTMLDivElement>()
 let trendChart: ECharts | null = null
 let pieChart: ECharts | null = null
+
+const chartType = ref<'appointments' | 'revenue' | 'boarding'>('appointments')
+let cachedTrendData: any[] = []
 
 const showUserStats = () => {
   userStatsVisible.value = true
@@ -239,49 +247,15 @@ const initCharts = async () => {
   try {
     // 获取图表数据
     const [trendData, distributionData] = await Promise.all([
-      getAppointmentTrend(),
+      getTrends(),
       getServiceDistribution()
     ])
     
-    // 初始化预约趋势图
-    if (trendChartRef.value) {
-      trendChart = echarts.init(trendChartRef.value)
-      trendChart.setOption({
-        tooltip: {
-          trigger: 'axis'
-        },
-        xAxis: {
-          type: 'category',
-          data: trendData.map(item => dayjs(item.date).format('MM-DD')),
-          axisLine: { lineStyle: { color: '#E0E0E0' } },
-          axisLabel: { color: '#666' }
-        },
-        yAxis: {
-          type: 'value',
-          axisLine: { lineStyle: { color: '#E0E0E0' } },
-          axisLabel: { color: '#666' },
-          splitLine: { lineStyle: { color: '#F5F5F5' } }
-        },
-        series: [{
-          data: trendData.map(item => item.count),
-          type: 'line',
-          smooth: true,
-          lineStyle: { color: '#FFD600', width: 3 },
-          areaStyle: {
-            color: {
-              type: 'linear',
-              x: 0, y: 0, x2: 0, y2: 1,
-              colorStops: [
-                { offset: 0, color: 'rgba(255, 214, 0, 0.3)' },
-                { offset: 1, color: 'rgba(255, 214, 0, 0.05)' }
-              ]
-            }
-          },
-          itemStyle: { color: '#FFD600' }
-        }],
-        grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true }
-      })
-    }
+    // 缓存趋势数据
+    cachedTrendData = trendData
+    
+    // 初始化趋势图
+    updateChart()
     
     // 初始化服务分布饼图
     if (pieChartRef.value) {
@@ -321,6 +295,93 @@ const initCharts = async () => {
   } catch (error) {
     console.error('初始化图表失败:', error)
   }
+}
+
+const updateChart = () => {
+  if (!trendChartRef.value || cachedTrendData.length === 0) return
+  
+  if (!trendChart) {
+    trendChart = echarts.init(trendChartRef.value)
+  }
+  
+  // 根据选择的类型配置图表
+  const chartConfig: any = {
+    appointments: {
+      name: '预约数',
+      color: '#FFD600',
+      data: cachedTrendData.map(item => item.appointments),
+      yAxisName: '预约数量',
+      formatter: '{value}'
+    },
+    revenue: {
+      name: '营收',
+      color: '#00E676',
+      data: cachedTrendData.map(item => parseFloat(String(item.revenue))),
+      yAxisName: '营收(¥)',
+      formatter: '¥{value}'
+    },
+    boarding: {
+      name: '寄养数',
+      color: '#2979FF',
+      data: cachedTrendData.map(item => item.boarding),
+      yAxisName: '寄养数量',
+      formatter: '{value}'
+    }
+  }
+  
+  const config = chartConfig[chartType.value]
+  
+  trendChart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: any) => {
+        const param = params[0]
+        let value = param.value
+        // 根据图表类型格式化数值
+        if (chartType.value === 'revenue') {
+          value = `¥${value.toFixed(2)}`
+        } else {
+          value = value.toString()
+        }
+        return `${param.axisValue}<br/>${config.name}: ${value}`
+      }
+    },
+    xAxis: {
+      type: 'category',
+      data: cachedTrendData.map(item => dayjs(item.date).format('MM-DD')),
+      axisLine: { lineStyle: { color: '#E0E0E0' } },
+      axisLabel: { color: '#666' }
+    },
+    yAxis: {
+      type: 'value',
+      name: config.yAxisName,
+      axisLine: { lineStyle: { color: '#E0E0E0' } },
+      axisLabel: { 
+        color: '#666',
+        formatter: config.formatter
+      },
+      splitLine: { lineStyle: { color: '#F5F5F5' } }
+    },
+    series: [{
+      name: config.name,
+      data: config.data,
+      type: 'line',
+      smooth: true,
+      lineStyle: { color: config.color, width: 3 },
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: `${config.color}4D` }, // 30% opacity
+            { offset: 1, color: `${config.color}0D` }  // 5% opacity
+          ]
+        }
+      },
+      itemStyle: { color: config.color }
+    }],
+    grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true }
+  })
 }
 
 const formatDate = (date: string) => {
