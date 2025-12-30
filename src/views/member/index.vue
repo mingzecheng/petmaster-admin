@@ -30,7 +30,6 @@
       <el-table v-loading="loading" :data="tableData" stripe border class="theme-table">
         <el-table-column type="index" label="#" width="60" align="center" />
         <el-table-column prop="username" label="用户名" width="120" show-overflow-tooltip />
-        <el-table-column prop="mobile" label="手机号" width="130" />
         
         <!-- 会员等级 -->
         <el-table-column label="会员等级" width="130" align="center">
@@ -203,7 +202,6 @@ import { getUserList } from '@/api/user'
 import { 
   createMemberCard, 
   rechargeMemberCard, 
-  getRechargeRecords,
   freezeMemberCard,
   unfreezeMemberCard,
   cancelMemberCard,

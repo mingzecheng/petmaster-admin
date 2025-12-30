@@ -44,8 +44,11 @@
       <div class="pagination">
         <el-pagination
           v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
           :total="total"
-          layout="total, prev, pager, next"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next"
+          @size-change="loadData"
           @current-change="loadData"
         />
       </div>
@@ -89,7 +92,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getBoardingList, createBoarding, updateBoarding, deleteBoarding } from '@/api/boarding'
-import type { Boarding, BoardingCreate } from '@/types/boarding'
+import type { Boarding } from '@/types/boarding'
 import dayjs from 'dayjs'
 import { Plus } from '@element-plus/icons-vue' // 引入 Plus 图标
 

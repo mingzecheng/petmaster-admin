@@ -1,7 +1,6 @@
 export interface User {
   id: number
   username: string
-  mobile?: string
   email?: string
   role: 'admin' | 'staff' | 'member'
   created_at: string
@@ -17,21 +16,18 @@ export interface LoginForm {
 export interface RegisterForm {
   username: string
   password: string
-  mobile?: string
   email?: string
 }
 
 export interface UserCreate {
   username: string
   password: string
-  mobile?: string
   email?: string
   role: 'admin' | 'staff' | 'member'
 }
 
 export interface UserUpdate {
   username?: string
-  mobile?: string
   email?: string
   role?: 'admin' | 'staff' | 'member'
 }

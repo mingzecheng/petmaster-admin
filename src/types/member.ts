@@ -101,9 +101,8 @@ export interface CardRechargeRecord {
 export interface UserWithMember {
     id: number
     username: string
-    mobile?: string
     email?: string
-    role: string
+    role: 'admin' | 'staff' | 'member'
     points: number
     total_points: number
     member_level_id?: number

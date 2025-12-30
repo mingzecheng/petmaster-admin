@@ -23,11 +23,6 @@
               <span class="value">{{ userStore.userInfo?.email || '未设置' }}</span>
             </div>
             <div class="info-item">
-              <el-icon><Phone /></el-icon>
-              <span class="label">手机:</span>
-              <span class="value">{{ userStore.userInfo?.mobile || '未设置' }}</span>
-            </div>
-            <div class="info-item">
               <el-icon><Calendar /></el-icon>
               <span class="label">注册时间:</span>
               <span class="value">{{ formatDate(userStore.userInfo?.created_at) }}</span>
@@ -55,10 +50,6 @@
           >
             <el-form-item label="用户名" prop="username">
               <el-input v-model="infoForm.username" placeholder="请输入用户名" />
-            </el-form-item>
-
-            <el-form-item label="手机号" prop="mobile">
-              <el-input v-model="infoForm.mobile" placeholder="请输入手机号" />
             </el-form-item>
 
             <el-form-item label="邮箱" prop="email">
@@ -134,7 +125,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { updateCurrentUser, changePassword } from '@/api/user'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { Message, Phone, Calendar } from '@element-plus/icons-vue'
+import { Message, Calendar } from '@element-plus/icons-vue'
 import type { UserUpdate, ChangePasswordForm } from '@/types/user'
 import dayjs from 'dayjs'
 
@@ -148,7 +139,6 @@ const passwordLoading = ref(false)
 // 基本信息表单
 const infoForm = reactive<UserUpdate>({
   username: '',
-  mobile: '',
   email: '',
 })
 
@@ -160,7 +150,7 @@ const passwordForm = reactive<ChangePasswordForm>({
 })
 
 // 验证确认密码
-const validateConfirmPassword = (rule: any, value: any, callback: any) => {
+const validateConfirmPassword = (value: any, callback: any) => {
   if (value === '') {
     callback(new Error('请再次输入新密码'))
   } else if (value !== passwordForm.new_password) {
@@ -198,7 +188,6 @@ const passwordRules: FormRules = {
 const initFormData = () => {
   if (userStore.userInfo) {
     infoForm.username = userStore.userInfo.username
-    infoForm.mobile = userStore.userInfo.mobile || ''
     infoForm.email = userStore.userInfo.email || ''
   }
 }

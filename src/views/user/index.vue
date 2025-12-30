@@ -22,7 +22,6 @@
           <el-table-column type="index" label="#" width="60" align="center" />
           <el-table-column prop="id" label="ID" width="80" align="center" />
           <el-table-column prop="username" label="用户名" min-width="120" />
-          <el-table-column prop="mobile" label="手机号" min-width="130" />
           <el-table-column prop="email" label="邮箱" min-width="180" />
           <el-table-column prop="role" label="角色" width="100" align="center">
             <template #default="{ row }">
@@ -95,9 +94,6 @@
             show-password
           />
         </el-form-item>
-        <el-form-item label="手机号" prop="mobile">
-          <el-input v-model="formData.mobile" placeholder="请输入手机号" />
-        </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="formData.email" placeholder="请输入邮箱" />
         </el-form-item>
@@ -124,7 +120,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getUserList, createUser, updateUser, deleteUser } from '@/api/user'
-import type { User, UserUpdate, UserCreate } from '@/types/user'
+import type { User, UserUpdate } from '@/types/user'
 import dayjs from 'dayjs'
 
 const loading = ref(false)
@@ -140,12 +136,11 @@ const formRef = ref<FormInstance>()
 const currentEditId = ref(0)
 const isCreateMode = ref(false)
 
-const formData = reactive<UserCreate>({
+const formData = reactive({
   username: '',
   password: '',
-  mobile: '',
   email: '',
-  role: 'member',
+  role: 'member' as 'admin' | 'staff' | 'member',
 })
 
 /** 正则表达式 */
@@ -154,8 +149,6 @@ const REGEX = {
   username: /^[a-zA-Z][a-zA-Z0-9_]{2,19}$/,
   /** 密码：6-20位，必须包含字母和数字 */
   password: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{6,20}$/,
-  /** 手机号：11位中国大陆手机号 */
-  mobile: /^1[3-9]\d{9}$/,
   /** 邮箱 */
   email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
 }
@@ -181,16 +174,6 @@ const validatePassword = (_rule: any, value: string, callback: any) => {
   }
 }
 
-const validateMobile = (_rule: any, value: string, callback: any) => {
-  if (!value) {
-    callback() // 手机号可选
-  } else if (!REGEX.mobile.test(value)) {
-    callback(new Error('请输入正确的11位手机号'))
-  } else {
-    callback()
-  }
-}
-
 const validateEmail = (_rule: any, value: string, callback: any) => {
   if (!value) {
     callback() // 邮箱可选
@@ -204,7 +187,6 @@ const validateEmail = (_rule: any, value: string, callback: any) => {
 const rules: FormRules = {
   username: [{ required: true, validator: validateUsername, trigger: 'blur' }],
   password: [{ required: true, validator: validatePassword, trigger: 'blur' }],
-  mobile: [{ validator: validateMobile, trigger: 'blur' }],
   email: [{ validator: validateEmail, trigger: 'blur' }],
   role: [{ required: true, message: '请选择角色', trigger: 'change' }],
 }
@@ -237,7 +219,6 @@ const handleEdit = (row: User) => {
   currentEditId.value = row.id
   formData.username = row.username
   formData.password = '' // 编辑模式不显示密码
-  formData.mobile = row.mobile || ''
   formData.email = row.email || ''
   formData.role = row.role
   dialogVisible.value = true
@@ -281,7 +262,6 @@ const handleSubmit = async () => {
           // 更新用户 - 不包含密码
           const updateData: UserUpdate = {
             username: formData.username,
-            mobile: formData.mobile,
             email: formData.email,
             role: formData.role,
           }
@@ -330,7 +310,6 @@ const resetForm = () => {
   // 重置表单数据
   formData.username = ''
   formData.password = ''
-  formData.mobile = ''
   formData.email = ''
   formData.role = 'member'
 }
