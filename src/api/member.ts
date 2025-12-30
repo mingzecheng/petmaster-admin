@@ -41,7 +41,7 @@ export const getMemberLevel = (id: number) => {
  */
 export const createMemberLevel = (data: MemberLevelCreate) => {
     return request<MemberLevel>({
-        url: '/member_levels',
+        url: '/member_levels/',
         method: 'post',
         data,
     })
