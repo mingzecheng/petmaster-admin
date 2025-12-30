@@ -21,7 +21,7 @@ import type {
  */
 export const getMemberLevels = () => {
     return request<MemberLevel[]>({
-        url: '/member_levels',
+        url: '/member_levels/',
         method: 'get',
     })
 }
