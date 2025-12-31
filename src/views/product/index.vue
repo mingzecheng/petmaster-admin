@@ -34,7 +34,6 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
         <el-table-column label="操作" width="180" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" link @click="handleEdit(row)">编辑</el-button>
@@ -69,9 +68,6 @@
         <el-form-item label="库存" prop="stock">
           <el-input-number v-model="formData.stock" :min="0" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="formData.description" type="textarea" :rows="3" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -105,7 +101,6 @@ const formData = reactive<ProductCreate>({
   category: '',
   price: 0,
   stock: 0,
-  description: '',
 })
 
 const rules = {
@@ -191,7 +186,6 @@ const resetForm = () => {
     category: '',
     price: 0,
     stock: 0,
-    description: '',
   })
 }
 

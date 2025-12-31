@@ -2,7 +2,7 @@ export interface Product {
   id: number
   name: string
   category: string
-  description?: string
+
   price: number
   stock: number
   image_url?: string
@@ -13,7 +13,7 @@ export interface Product {
 export interface ProductCreate {
   name: string
   category: string
-  description?: string
+
   price: number
   stock: number
   image_url?: string
@@ -22,7 +22,7 @@ export interface ProductCreate {
 export interface ProductUpdate {
   name?: string
   category?: string
-  description?: string
+
   price?: number
   stock?: number
   image_url?: string
