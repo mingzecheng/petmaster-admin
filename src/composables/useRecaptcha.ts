@@ -58,8 +58,8 @@ export function useRecaptcha() {
 
             // 根据版本加载不同的脚本
             if (version === 'v2') {
-                // v2 加载基础脚本
-                script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit'
+                // v2 加载基础脚本 (hl=zh-CN 设置为中文)
+                script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit&hl=zh-CN'
                 // 设置全局回调
                 window.onRecaptchaLoad = () => {
                     loaded.value = true
@@ -67,8 +67,8 @@ export function useRecaptcha() {
                     resolve()
                 }
             } else {
-                // v3 加载渲染脚本
-                script.src = `https://www.google.com/recaptcha/api.js?render=${V3_SITE_KEY}`
+                // v3 加载渲染脚本 (hl=zh-CN 设置为中文)
+                script.src = `https://www.google.com/recaptcha/api.js?render=${V3_SITE_KEY}&hl=zh-CN`
                 script.onload = () => {
                     loaded.value = true
                     loading.value = false
