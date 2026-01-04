@@ -32,6 +32,7 @@ export interface PetUpdate {
   gender?: 'male' | 'female'
   birthday?: string
   weight?: number
+  owner_id?: number
   health_status?: string
   image_url?: string
 }

@@ -290,7 +290,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules, UploadRequestOptions } from 'element-plus'
-import { getPetList, createPet, updatePet, deletePet, uploadPetImage, deletePetImage, getHealthRecords } from '@/api/pet'
+import { getPetList, createPet, updatePet, deletePet, uploadPetImage, deletePetImage } from '@/api/pet'
 import type { Pet, PetCreate, PetUpdate, HealthRecord } from '@/types/pet'
 import { createHealthRecord, updateHealthRecord, deleteHealthRecord, getPetHealthRecords } from '@/api/health'
 import type { HealthRecordCreate, HealthRecordUpdate } from '@/types/health'
@@ -314,7 +314,7 @@ const formRef = ref<FormInstance>()
 const isEdit = ref(false)
 const currentEditId = ref(0)
 
-const formData = reactive<PetCreate | PetUpdate>({
+const formData = reactive({
   name: '',
   species: '',
   breed: '',
@@ -323,7 +323,7 @@ const formData = reactive<PetCreate | PetUpdate>({
   weight: undefined,
   owner_id: 1,
   health_status: '',
-})
+}) as PetCreate & PetUpdate
 
 const rules: FormRules = {
   name: [{ required: true, message: '请输入宠物名称', trigger: 'blur' }],
@@ -425,12 +425,12 @@ const isEditHealthRecord = ref(false)
 const currentHealthRecordId = ref(0)
 const currentPetId = ref(0)
 
-const healthFormData = reactive<HealthRecordCreate | HealthRecordUpdate>({
+const healthFormData = reactive({
   pet_id: 0,
   record_date: '',
   description: '',
   veterinarian: '',
-})
+}) as HealthRecordCreate & HealthRecordUpdate
 
 const healthRules: FormRules = {
   record_date: [{ required: true, message: '请选择记录日期', trigger: 'change' }],
