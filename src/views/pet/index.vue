@@ -345,8 +345,11 @@ const loadData = async () => {
     
     const data = await getPetList(params)
     tableData.value = data
-    // 注意：这里需要后端返回总数，暂时使用数据长度作为示例
-    total.value = data.length
+    if (data.length === pageSize.value) {
+      total.value = currentPage.value * pageSize.value + 1
+    } else {
+      total.value = (currentPage.value - 1) * pageSize.value + data.length
+    }
   } catch (error) {
     ElMessage.error('加载数据失败')
   } finally {

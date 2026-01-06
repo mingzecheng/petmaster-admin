@@ -198,7 +198,11 @@ const loadData = async () => {
     const skip = (currentPage.value - 1) * pageSize.value
     const data = await getUserList({ skip, limit: pageSize.value })
     tableData.value = data
-    total.value = data.length
+    if (data.length === pageSize.value) {
+      total.value = currentPage.value * pageSize.value + 1
+    } else {
+      total.value = (currentPage.value - 1) * pageSize.value + data.length
+    }
   } catch (error) {
     ElMessage.error('加载数据失败')
   } finally {
