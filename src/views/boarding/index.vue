@@ -56,8 +56,20 @@
 
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
       <el-form ref="formRef" :model="formData" :rules="rules" label-width="100px">
-        <el-form-item label="宠物ID" prop="pet_id">
-          <el-input-number v-model="formData.pet_id" :min="1" style="width: 100%" />
+        <el-form-item label="宠物" prop="pet_id">
+          <el-select
+            v-model="formData.pet_id"
+            placeholder="请选择宠物"
+            style="width: 100%"
+            filterable
+          >
+            <el-option
+              v-for="pet in petList"
+              :key="pet.id"
+              :label="`${pet.name} (ID: ${pet.id})`"
+              :value="pet.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="开始日期" prop="start_date">
           <el-date-picker v-model="formData.start_date" type="date" style="width: 100%" />
@@ -92,7 +104,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getBoardingList, createBoarding, updateBoarding, deleteBoarding } from '@/api/boarding'
+import { getPetList } from '@/api/pet'
 import type { Boarding } from '@/types/boarding'
+import type { Pet } from '@/types/pet'
 import dayjs from 'dayjs'
 import { Plus } from '@element-plus/icons-vue' // 引入 Plus 图标
 
@@ -106,6 +120,7 @@ const dialogTitle = ref('添加寄养')
 const formRef = ref()
 const isEdit = ref(false)
 const currentEditId = ref(0)
+const petList = ref<Pet[]>([])
 
 const formData = reactive<any>({
   pet_id: 1,
@@ -117,10 +132,22 @@ const formData = reactive<any>({
 })
 
 const rules = {
-  pet_id: [{ required: true, message: '请输入宠物ID', trigger: 'blur' }],
+  pet_id: [{ required: true, message: '请选择宠物', trigger: 'change' }],
   start_date: [{ required: true, message: '请选择开始日期', trigger: 'change' }],
   end_date: [{ required: true, message: '请选择结束日期', trigger: 'change' }],
   daily_rate: [{ required: true, message: '请输入日费用', trigger: 'blur' }],
+}
+
+/**
+ * 加载宠物列表
+ */
+const loadPets = async () => {
+  try {
+    const data = await getPetList({ limit: 1000 })
+    petList.value = data
+  } catch (error) {
+    console.error('加载宠物列表失败:', error)
+  }
 }
 
 const loadData = async () => {
@@ -163,12 +190,14 @@ const getStatusText = (status: string) => {
   return texts[status] || status
 }
 
-const handleAdd = () => {
+const handleAdd = async () => {
   isEdit.value = false
   dialogTitle.value = '添加寄养'
+  // 加载宠物列表
+  await loadPets()
   // 重置表单
   Object.assign(formData, {
-    pet_id: 1,
+    pet_id: null,
     start_date: new Date(),
     end_date: new Date(),
     daily_rate: 80,
@@ -179,10 +208,12 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (row: Boarding) => {
+const handleEdit = async (row: Boarding) => {
   isEdit.value = true
   currentEditId.value = row.id
   dialogTitle.value = '编辑寄养'
+  // 加载宠物列表
+  await loadPets()
   Object.assign(formData, {
     ...row,
     start_date: dayjs(row.start_date).toDate(), // 转换成 Date 对象以适配 date-picker
