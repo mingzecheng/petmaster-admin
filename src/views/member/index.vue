@@ -262,7 +262,11 @@ const loadData = async () => {
     }
     const data = await getUserList(params) as any
     tableData.value = data || []
-    total.value = data.length || 0
+    if (data && data.length === pageSize.value) {
+      total.value = currentPage.value * pageSize.value + 1
+    } else {
+      total.value = (currentPage.value - 1) * pageSize.value + (data?.length || 0)
+    }
   } catch (error: any) {
     ElMessage.error(error.response?.data?.detail || '加载失败')
   } finally {
