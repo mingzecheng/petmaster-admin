@@ -1,4 +1,4 @@
-export type BoardingStatus = 'pending' | 'active' | 'completed' | 'cancelled'
+export type BoardingStatus = 'pending' | 'active' | 'completed' | 'cancelled' | 'refunded'
 
 export interface Boarding {
   id: number

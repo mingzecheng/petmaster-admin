@@ -82,6 +82,7 @@
             <el-option label="已确认" value="confirmed" />
             <el-option label="已完成" value="completed" />
             <el-option label="已取消" value="cancelled" />
+            <el-option label="已退款" value="refunded" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -157,6 +158,7 @@ const getStatusType = (status: string) => {
     confirmed: 'primary',
     completed: 'success',
     cancelled: 'info',
+    refunded: 'danger',
   }
   return types[status] || 'info'
 }
@@ -167,6 +169,7 @@ const getStatusText = (status: string) => {
     confirmed: '已确认',
     completed: '已完成',
     cancelled: '已取消',
+    refunded: '已退款',
   }
   return texts[status] || status
 }

@@ -1,4 +1,4 @@
-export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
+export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'refunded'
 
 export interface Appointment {
   id: number
@@ -19,4 +19,11 @@ export interface AppointmentCreate {
 export interface AppointmentUpdate {
   appointment_time?: string  // 后端使用 appointment_time
   status?: AppointmentStatus
+}
+
+/**
+ * 取消预约请求
+ */
+export interface AppointmentCancelRequest {
+  reason: string  // 取消原因
 }

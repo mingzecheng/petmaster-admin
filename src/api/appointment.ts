@@ -3,7 +3,7 @@ import type {
   Appointment,
   AppointmentCreate,
   AppointmentUpdate,
-  AppointmentStatus
+  AppointmentStatus,
 } from '@/types/appointment'
 
 // 创建预约
@@ -48,11 +48,16 @@ export const updateAppointment = (id: number, data: AppointmentUpdate) => {
   })
 }
 
-// 取消预约
-export const cancelAppointment = (id: number) => {
+/**
+ * 取消预约
+ * @param id 预约ID
+ * @param reason 取消原因
+ */
+export const cancelAppointment = (id: number, reason: string = '用户取消') => {
   return request({
-    url: `/appointments/${id}`,
-    method: 'delete',
+    url: `/appointments/${id}/cancel`,
+    method: 'post',
+    data: { reason }
   })
 }
 
